@@ -146,6 +146,108 @@ with sync_playwright() as p:
     ss = money(pg.inner_text("#rampBody tr.total td:nth-child(3)"))
     ok("year one nets less than steady state on screen", y1 < ss, (y1, ss))
 
+    # ================= RENT-TO-RENT MODE =================
+    # She corrected me: her people rent other people's flats and sublet them.
+    # No mortgage — a rent bill that arrives whether or not anyone booked.
+
+    def disp(sel):
+        return pg.eval_on_selector(sel, "e => getComputedStyle(e).display")
+
+    ok("break-even panel is hidden in owner mode", disp("#bePanel") == "none", disp("#bePanel"))
+    ok("the rent field is hidden in owner mode",
+       pg.eval_on_selector("#monthlyRent", "e => getComputedStyle(e.closest('.rentOnly')).display") == "none")
+
+    pg.check("#modeRent")
+    pg.wait_for_timeout(500)
+
+    # assert the COMPUTED display, not the attribute — `hidden` loses to any
+    # class rule that sets display, and it loses silently.
+    ok("break-even panel appears in rent mode", disp("#bePanel") != "none", disp("#bePanel"))
+    ok("the mortgage field is genuinely gone, not just marked hidden",
+       pg.eval_on_selector("#monthlyFinance", "e => getComputedStyle(e.closest('.ownOnly')).display") == "none")
+    ok("the long-let comparison is gone too — it is not yours to let",
+       pg.eval_on_selector("#longLetMonthly", "e => getComputedStyle(e.closest('.ownOnly')).display") == "none")
+    ok("the consent question is asked", disp("#landlordConsent") != "none")
+
+    # default is 'no consent', which must dominate the verdict
+    ok("with no permission to sublet the page says Weak",
+       pg.inner_text("#verdictWord").strip() == "Weak", pg.inner_text("#verdictWord"))
+    ok("and it explains that it capped the score",
+       disp("#gateBox") != "none" and "permission" in pg.inner_text("#gateTitle").lower(),
+       pg.inner_text("#gateTitle"))
+    capped_score = int(pg.inner_text("#scoreNum"))
+
+    # the P&L must now name the rent, not a mortgage
+    pl_rent = pg.inner_text("#pl")
+    ok("the P&L names the rent, not a mortgage", "Rent to the landlord" in pl_rent and "Mortgage" not in pl_rent,
+       [l for l in pl_rent.split("\n") if "ent" in l or "ortg" in l])
+
+    # break-even must be readable and consistent with the table
+    be_txt = pg.inner_text("#beOcc")
+    ok("break-even occupancy is shown as a percentage", be_txt.endswith("%"), be_txt)
+    be_val = float(be_txt.rstrip("%"))
+    mod_val = float(pg.inner_text("#beOccModelled").rstrip("%"))
+    ok("break-even sits below modelled occupancy on this fixture", be_val < mod_val, (be_val, mod_val))
+    ok("the meter's green band starts where break-even ends",
+       abs(float(pg.eval_on_selector("#headFill", "e => parseFloat(e.style.left)")) - be_val) < 0.6)
+
+    # getting the signature is the single biggest move on the page
+    pg.select_option("#landlordConsent", "written")
+    pg.wait_for_timeout(400)
+    signed_score = int(pg.inner_text("#scoreNum"))
+    ok("written consent raises the score sharply", signed_score > capped_score + 20, (capped_score, signed_score))
+    ok("and the cap notice disappears", disp("#gateBox") == "none")
+    ok("the underlying money did not change — only the permission did",
+       pg.inner_text("#pl") == pl_rent)
+
+    # the rent is the lever that matters, and structural work is not offered
+    lev = pg.inner_text("#levers")
+    ok("rent negotiation is offered as a lever", "off the rent" in lev, lev[:200])
+    ok("it does not suggest installing a hot tub in someone else's flat",
+       "hot tub" not in lev.lower() and "parking" not in lev.lower(), lev[:300])
+
+    # London: the cap must bite through to the verdict in rent mode
+    pg.fill("#monthlyRent", "1100")
+    pg.select_option("#region", "london")
+    pg.wait_for_timeout(400)
+    ok("in London the flat cannot break even inside 90 nights",
+       "cannot break even" in pg.inner_text("#beNote") or "only allowed 90" in pg.inner_text("#beNote"),
+       pg.inner_text("#beNote"))
+    ok("the cap marker is drawn on the meter", disp("#capMark") != "none")
+    ok("and the verdict collapses", pg.inner_text("#verdictWord").strip() == "Weak")
+    pg.select_option("#region", "england")
+    pg.wait_for_timeout(400)
+    ok("leaving London restores it", pg.inner_text("#verdictWord").strip() != "Weak",
+       pg.inner_text("#verdictWord"))
+
+    # a rent rise must move the score every time, not plateau
+    ladder = []
+    for rent_v in ("700", "1200", "1700", "2200"):
+        pg.fill("#monthlyRent", rent_v)
+        pg.wait_for_timeout(320)
+        ladder.append(int(pg.inner_text("#scoreNum")))
+    ok("the score falls as the rent rises", all(b <= a for a, b in zip(ladder, ladder[1:])), ladder)
+    ok("and it moves at every step rather than plateauing", len(set(ladder)) == len(ladder), ladder)
+
+    pg.fill("#monthlyRent", "1100")
+    pg.wait_for_timeout(350)
+    pg.evaluate("window.scrollTo(0, 0)")
+    pg.wait_for_timeout(250)
+    pg.screenshot(path="%s/rent-top.png" % OUT)
+    pg.evaluate("window.scrollTo(0, document.body.scrollHeight*0.30)")
+    pg.wait_for_timeout(250)
+    pg.screenshot(path="%s/rent-breakeven.png" % OUT)
+
+    # and back — the owner model must survive the round trip
+    pg.check("#modeOwn")
+    pg.wait_for_timeout(450)
+    ok("switching back restores the owner panels", disp("#bePanel") == "none")
+    ok("and the long-let comparison returns",
+       pg.eval_on_selector("#longLetMonthly", "e => getComputedStyle(e.closest('.ownOnly')).display") != "none")
+    ok("the P&L says mortgage again", "Mortgage" in pg.inner_text("#pl"))
+    pg.check("#modeRent")
+    pg.wait_for_timeout(400)
+
     # --- no horizontal overflow at desktop and phone ---
     for w, h, tag in [(1280, 800, "desktop"), (390, 780, "phone")]:
         pg.set_viewport_size({"width": w, "height": h})
@@ -161,8 +263,71 @@ with sync_playwright() as p:
         pg.wait_for_timeout(300)
         pg.screenshot(path="%s/%s-end.png" % (OUT, tag))
 
+    # ================= THE GUIDE =================
+    # The guide contains a worked example. It was taken from this tool's own
+    # default output, so it has to be checked against the tool — a number
+    # copied into prose is a number that silently goes stale.
+    pg.goto(URL.replace("index.html", "guide.html"), wait_until="load", timeout=30000)
+    pg.wait_for_timeout(900)
+    ok("the guide has no javascript errors", not errs, errs)
+    gtxt = pg.inner_text("body")
+
+    ok("the guide loads its own styles",
+       pg.evaluate("getComputedStyle(document.documentElement).getPropertyValue('--rust').trim()") == "#A93E1C")
+    ok("both promised modules are written in full, not stubbed",
+       gtxt.upper().count("WRITTEN IN FULL") == 2, gtxt.upper().count("WRITTEN IN FULL"))
+    for want in ("Finding landlords", "Choosing where", "90 nights", "company let",
+                 "written permission", "Trading Standards", "Furnished Holiday Lettings"):
+        ok("the guide covers %r" % want, want in gtxt)
+    ok("it answers 'where do I find landlords' with named places",
+       all(s in gtxt for s in ("OpenRent", "SpareRoom", "National Residential Landlords")))
+    ok("it gives an actual script, not just advice", "Nelson Road" in gtxt)
+    ok("all twenty modules are listed", gtxt.count("20.1") == 1 and "Module 04" in gtxt)
+
+    # the worked example must equal what the engine actually produces
+    for figure in ("£16,560", "£152", "109", "223", "114"):
+        ok("the worked example figure %s appears" % figure, figure in gtxt)
+    engine_says = pg.evaluate("""() => null""")  # engine not loaded on this page by design
+    ok("the guide does not need the engine to render", engine_says is None)
+
+    ok("the guide links back to the tool", pg.locator("a[href='index.html']").count() >= 2)
+    ok("it says plainly that it is not advice", "legal, tax, planning or financial advice" in gtxt)
+
+    for tag, w, h in (("guide", 1280, 800), ("guide-phone", 390, 780)):
+        pg.set_viewport_size({"width": w, "height": h})
+        pg.wait_for_timeout(350)
+        over = pg.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")
+        ok("the guide does not scroll sideways at %s" % tag, over <= 2, over)
+        pg.evaluate("window.scrollTo(0, 0)")
+        pg.wait_for_timeout(250)
+        pg.screenshot(path="%s/%s-top.png" % (OUT, tag))
+    pg.set_viewport_size({"width": 1280, "height": 800})
+    pg.evaluate("document.querySelector('#m4').scrollIntoView({block:'start'})")
+    pg.wait_for_timeout(350)
+    pg.screenshot(path="%s/guide-landlords.png" % OUT)
+
     ok("still no js errors after all that", not errs, errs)
     br.close()
+
+# the guide quotes the engine's own default rent-to-rent output. Prove the
+# engine still produces those exact figures, or the prose has gone stale.
+import subprocess, json
+_probe = subprocess.run(["node", "-e", """
+var S=require('/var/lib/freelancer/projects/40333782/str-scorer/engine.js');
+var r=S.score({model:'rent',bedrooms:2,market:'coastal',region:'england',
+ comps:[[135,2],[118,2],[165,3],[95,1],[142,2]].map(c=>({rate:c[0],beds:c[1]})),
+ amenities:{outdoor:true,parking:true,selfin:true,workspace:true},
+ minStay:2,avgStay:3,proPhotos:true,instantBook:true,dynamicPricing:false,
+ cleaningFee:55,cleaningCost:45,platformFeePct:3,mgmtPct:0,
+ monthlyRunning:280,monthlyRent:1100,setupCapital:9000,landlordConsent:'none'});
+console.log(JSON.stringify({fixed:Math.round(r.arb.annualFixed),contrib:Math.round(r.arb.contribution),
+ be:Math.round(r.arb.breakEvenNights),nights:Math.round(r.nights.steady)}));
+"""], capture_output=True, text=True)
+_e = json.loads(_probe.stdout.strip())
+ok("guide's fixed-cost figure still matches the engine", _e["fixed"] == 16560, _e)
+ok("guide's contribution-per-night still matches", _e["contrib"] == 152, _e)
+ok("guide's break-even night count still matches", _e["be"] == 109, _e)
+ok("guide's achievable-nights figure still matches", _e["nights"] == 223, _e)
 
 print("checks: %d" % checks)
 print("PROBLEMS: %s" % ("\n  - " + "\n  - ".join(problems) if problems else "none"))

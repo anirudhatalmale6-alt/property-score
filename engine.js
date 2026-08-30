@@ -22,11 +22,11 @@
      a licensed data feed would override. */
 
   var MARKETS = {
-    city:      { label: 'City centre',              occ: 68, peakShare: 0.30, note: 'Steady midweek business demand, shallow seasonality.' },
-    coastal:   { label: 'Coastal / holiday',        occ: 52, peakShare: 0.48, note: 'Summer-loaded. Half the year can carry the other half — or fail to.' },
-    rural:     { label: 'Rural / countryside',      occ: 48, peakShare: 0.42, note: 'Weekend-led. Midweek is the whole problem.' },
-    events:    { label: 'Events / university town', occ: 55, peakShare: 0.40, note: 'Spiky. Graduation, festivals, fixtures do the heavy lifting.' },
-    suburban:  { label: 'Suburban / commuter',      occ: 45, peakShare: 0.32, note: 'Thin leisure demand. Usually the weakest short-let case.' }
+    city:      { label: 'City centre',              occ: 63, peakShare: 0.30, note: 'Steady midweek business demand, shallow seasonality.' },
+    coastal:   { label: 'Coastal / holiday',        occ: 50, peakShare: 0.48, note: 'Summer-loaded. Half the year can carry the other half — or fail to.' },
+    rural:     { label: 'Rural / countryside',      occ: 45, peakShare: 0.42, note: 'Weekend-led. Midweek is the whole problem.' },
+    events:    { label: 'Events / university town', occ: 52, peakShare: 0.40, note: 'Spiky. Graduation, festivals, fixtures do the heavy lifting.' },
+    suburban:  { label: 'Suburban / commuter',      occ: 42, peakShare: 0.32, note: 'Thin leisure demand. Usually the weakest short-let case.' }
   };
 
   /* Amenity uplifts are applied to nightly rate, multiplicatively, and the
@@ -75,7 +75,23 @@
         body: 'This engine only carries UK rules. Check the city registration regime yourself before you rely on any number here.' } ] }
   };
 
-  /* Flags that apply wherever the property is. */
+  /* Flags for the rent-to-rent model, where you do not own the property and
+     are subletting somebody else's. The risks are completely different to an
+     owner's, and mostly they are not about the property at all. */
+  var RENT_FLAGS = [
+    { sev: 'hard', title: 'Written consent to sublet is the whole business',
+      body: 'Almost every assured shorthold tenancy prohibits subletting. Without the landlord\'s written permission you are in breach from the first booking: the landlord can seek possession, keep the deposit, and sue for the profit you made. A verbal yes from a letting agent is not consent — the agent usually cannot give it, and it evaporates the moment the landlord finds out. Get a company let or a management agreement that names short lets in writing.' },
+    { sev: 'hard', title: 'The rent is due whether or not anyone books',
+      body: 'This is the difference between rent-to-rent and owning. An owner with an empty month loses profit; you lose cash. Twelve rent payments a year are certain, the bookings are not. Everything below turns on that one asymmetry.' },
+    { sev: 'hard', title: 'The landlord\'s lease, mortgage and insurance bind you too',
+      body: 'If the flat is leasehold, the head lease usually bars short lets — the freeholder can act against the landlord even if the landlord agreed with you. The landlord\'s buy-to-let mortgage almost certainly bars it as well, and their insurance will not cover paying guests. Ask to see the lease and get the consent in writing from whoever actually has the power to give it.' },
+    { sev: 'soft', title: 'Rent-to-rent is where the fraud complaints are',
+      body: 'The model itself is legal. The training industry around it is where Trading Standards, the Property Ombudsman and a good deal of litigation live, largely because operators sign a tenancy and sublet without telling anyone. Doing it properly is slower and much duller than the courses suggest.' },
+    { sev: 'soft', title: 'Let by room and you may be running an HMO',
+      body: 'Renting rooms separately to three or more unrelated people can make the property a house in multiple occupation, which needs a licence, fire doors and minimum room sizes. Whole-unit short lets do not, but the moment you split it you are in a different regime.' }
+  ];
+
+  /* Flags that apply wherever the property is — owner model. */
   var UNIVERSAL_FLAGS = [
     { sev: 'hard', title: 'Furnished Holiday Lettings regime is gone',
       body: 'The FHL tax regime was abolished from April 2025. Full mortgage-interest relief, capital allowances and the CGT reliefs that made holiday lets attractive no longer apply — short lets are now taxed broadly like any other property business. Any spreadsheet built before 2025 overstates the net.' },
@@ -113,6 +129,20 @@
     var beds  = clamp(num(input.bedrooms, 1), 0.5, 12);
     var mkt   = MARKETS[input.market] || MARKETS.city;
     var cur   = input.currency || '£';
+
+    /* Two completely different businesses share this engine.
+         'own'  — you own it, the fixed monthly cost is a mortgage, and the
+                  honest question is "versus letting it to a tenant".
+         'rent' — you rent it from a landlord and sublet it (rent-to-rent /
+                  arbitrage). There is no mortgage and no long-let
+                  alternative, because it is not yours to let. The fixed cost
+                  is rent, it is due twelve times a year regardless of
+                  bookings, and the questions become: what occupancy just
+                  covers the rent, how much headroom is there above that, and
+                  what does the furnishing money earn?
+       Everything above this line is identical for both. */
+    var isRent = input.model === 'rent';
+    var fixedMonthly = isRent ? num(input.monthlyRent, 0) : num(input.monthlyFinance, 0);
 
     /* --- 1. nightly rate from the comparables ---------------------------
        Normalise each comp to a per-bedroom-unit rate, take the MEDIAN (not
@@ -167,15 +197,19 @@
 
     /* label the ABSENCE explicitly — "Dynamic pricing tool −4" reads as though
        the tool were a penalty, when it is not having one that costs you */
-    occAdd('Instant book on', input.instantBook ? 4 : 0);
+    occAdd('Instant book on', input.instantBook ? 3 : 0);
     occAdd(input.proPhotos ? 'Professional photography' : 'No professional photography',
-      input.proPhotos ? 5 : -6);
+      input.proPhotos ? 4 : -6);
     occAdd(input.dynamicPricing ? 'Dynamic pricing tool' : 'No dynamic pricing, fixed rates',
-      input.dynamicPricing ? 5 : -4);
-    occAdd('Managed / co-hosted', input.managed ? 4 : 0);
+      input.dynamicPricing ? 4 : -4);
+    occAdd('Managed / co-hosted', input.managed ? 3 : 0);
     occAdd(priceStance < 0 ? 'Priced above the comparables' : 'Priced below the comparables', priceStance);
 
-    var steadyOcc = clamp(occ, 15, 88);
+    /* 82% is the believable ceiling for a very well run UK listing over a full
+       year, not a stretch target. The old ceiling of 88 let a stack of good
+       decisions produce an occupancy nobody actually achieves — which is
+       exactly the arithmetic that gets people to sign a twelve-month rent. */
+    var steadyOcc = clamp(occ, 15, 82);
     if (occ !== steadyOcc) occLines.push({ label: 'clamped to a believable range', pts: round(steadyOcc - occ, 1) });
 
     /* --- 5. the first-year ramp -----------------------------------------
@@ -220,7 +254,7 @@
       var mgmtFee = (revenue - fees) * mgmt;
       var cleanOut = cleanCost * turns;
       var running = num(input.monthlyRunning, 0) * 12;   // utilities, insurance, council tax, service charge
-      var finance = num(input.monthlyFinance, 0) * 12;   // mortgage or rent
+      var finance = fixedMonthly * 12;                   // mortgage if you own it, rent if you do not
       var net = revenue - fees - mgmtFee - cleanOut - running - finance;
       return {
         nights: nights, turns: turns, gross: gross, cleaningIncome: cleanIn, revenue: revenue,
@@ -232,6 +266,84 @@
 
     var steady = money(steadyNights);
     var year1  = money(year1Nights);
+
+    /* --- 7b. break-even, and what the setup money earns -------------------
+       For rent-to-rent this is the whole analysis, so it is computed
+       properly rather than eyeballed off the annual total.
+
+       Every let night contributes (rate + cleaning fee spread over the stay),
+       less the platform cut, less the manager's cut, less the cleaner. The
+       rent and the standing costs do not care how many nights you sell. So
+       the break-even night count is simply fixed costs divided by the
+       contribution one night makes, and the break-even OCCUPANCY that comes
+       out of it is the single most useful number in the model: it is what
+       you must fill before you have earned a penny.
+
+       It is also the real answer to "which location is best". A good
+       arbitrage location is not the one with the highest nightly rate — it
+       is the one where the gap between break-even occupancy and achievable
+       occupancy is widest. */
+    var perNightRevenue = adr + (cleanFee / avgStay);
+    var contribution    = perNightRevenue * (1 - platform) * (1 - mgmt) - (cleanCost / avgStay);
+    var annualFixed     = (num(input.monthlyRunning, 0) + fixedMonthly) * 12;
+    var maxNights       = capNights || 365;
+
+    var breakEvenNights = contribution > 0 ? annualFixed / contribution : Infinity;
+    var breakEvenOcc    = contribution > 0 ? breakEvenNights / 365 * 100 : Infinity;
+    var reachable       = isFinite(breakEvenNights) && breakEvenNights <= maxNights;
+
+    var setup = num(input.setupCapital, 0);
+    var coc   = setup > 0 ? steady.net / setup : null;   // cash on cash, annual, once established
+
+    /* Payback has to be paid back out of YEAR ONE money for the first twelve
+       months, not out of steady state. Using the steady figure throughout
+       said six months when the honest answer is ten — and it is the first
+       year, the ramped one, that decides whether somebody runs out of cash. */
+    var payback = null;
+    if (setup > 0) {
+      var y1Month = year1.net / 12;
+      if (year1.net >= setup && y1Month > 0) {
+        payback = setup / y1Month;
+      } else if (steady.net > 0) {
+        payback = 12 + (setup - year1.net) / (steady.net / 12);
+      }
+    }
+
+    var arb = {
+      perNightRevenue: perNightRevenue,
+      contribution: contribution,
+      annualFixed: annualFixed,
+      breakEvenNights: breakEvenNights,
+      breakEvenOcc: breakEvenOcc,
+      /* Headroom is measured in NIGHTS, then expressed as points of the year.
+         Occupancy minus break-even occupancy looks the same until a cap
+         applies, and then it lies: in London this property models 82%
+         occupancy and breaks even at 37%, which reads as comfortable — but
+         it is only allowed 90 nights, and it needs 136. Nights notice that.
+         Occupancy does not. */
+      headroomNights: steadyNights - breakEvenNights,
+      headroom: (steadyNights - breakEvenNights) / 365 * 100,
+      reachable: reachable,
+      maxNights: maxNights,
+      monthlyFixed: num(input.monthlyRunning, 0) + fixedMonthly,
+      setupCapital: setup,
+      cashOnCash: coc,
+      paybackMonths: payback,
+      monthlyProfit: steady.net / 12,
+      year1Profit: year1.net
+    };
+
+    if (isRent) {
+      step('Every let night contributes',
+        cur + round(perNightRevenue, 0) + ' of revenue less the platform, the manager and the cleaner',
+        round(contribution, 2));
+      step('Nights needed to cover rent and standing costs',
+        cur + round(annualFixed, 0) + ' of fixed cost ÷ ' + cur + round(contribution, 2) + ' a night' +
+        (reachable ? '' : ' — more nights than the year allows'),
+        isFinite(breakEvenNights) ? round(breakEvenNights, 0) : 0);
+      step('Break-even occupancy', 'you earn nothing at all below this',
+        isFinite(breakEvenOcc) ? round(breakEvenOcc, 1) : 100);
+    }
 
     /* --- 8. a range, not a point number ---------------------------------
        The width comes from how much the comps disagree with each other and
@@ -246,9 +358,33 @@
     };
 
     /* --- 9. the score ---------------------------------------------------- */
-    var longLet = num(input.longLetMonthly, 0);
+    var longLet = isRent ? 0 : num(input.longLetMonthly, 0);
     var yieldPts, yieldBasis, alt = null;
-    if (longLet > 0) {
+    if (isRent) {
+      /* No long-let comparison exists here: the property is not yours to let
+         to a tenant, so there is nothing to compare against. What replaces it
+         is margin (does it clear the rent by enough to survive a bad quarter)
+         and the return on the money you actually put in — the deposit and the
+         furniture, which is the only capital at risk. */
+      /* Scales chosen so the score keeps MOVING across the range a real deal
+         sits in. An earlier pair saturated at 30% margin and 60% cash-on-cash,
+         which made every rent from £700 to £1,700 a month score exactly 87 —
+         a £12,000 difference in annual profit, invisible. Same failure as
+         comparing after a shared cost: the number stops carrying information. */
+      var headPts = clamp(arb.headroom / 60 * 30, 0, 30);
+      var cocPts = setup > 0
+        ? clamp((coc || 0) / 3.0 * 20, 0, 20)
+        : clamp(steady.margin / 0.30 * 20, 0, 20);
+      yieldPts = headPts + cocPts;
+      /* Stated in nights whenever a cap applies, because that is the binding
+         constraint and occupancy hides it. */
+      yieldBasis = !isFinite(breakEvenNights)
+        ? 'each night costs more to service than it earns, so no occupancy covers the rent'
+        : capNights
+          ? 'it needs ' + round(breakEvenNights, 0) + ' let nights to cover the rent and the cap allows ' + maxNights
+          : 'it breaks even at ' + round(breakEvenOcc, 0) + '% occupancy against a modelled ' + round(steadyOcc, 0) + '%' +
+            (setup > 0 ? ', and returns ' + round((coc || 0) * 100, 0) + '% a year on the ' + cur + round(setup, 0) + ' you put in' : '');
+    } else if (longLet > 0) {
       /* Against the honest alternative: letting it to a tenant.
          Compare BEFORE finance. The mortgage is identical either way, so
          leaving it in both sides only shrinks the denominator — and when a
@@ -281,6 +417,38 @@
     var risks = [], riskPts = 0;
     function risk(pts, text) { riskPts += pts; risks.push({ pts: pts, text: text }); }
     if (capNights)            risk(8, 'The 90-night London cap is doing the limiting, not the market.');
+
+    /* Rent-to-rent specific. These sit above everything else because they are
+       the ways this model actually fails, and none of them are about the
+       property being nice. */
+    if (isRent) {
+      var consent = input.landlordConsent || 'none';
+      if (consent === 'written') {
+        /* no deduction — this is the correct state */
+      } else if (consent === 'verbal') {
+        risk(12, 'Only a verbal agreement to sublet. That is not consent. Get it in writing, from the landlord, naming short lets — an agent\'s nod will not survive the first complaint.');
+      } else {
+        risk(20, 'No permission to sublet. Without it there is no business here: the landlord can end the tenancy, keep the deposit and claim the profit. Every other number on this page is hypothetical until this is signed.');
+      }
+
+      if (!reachable) {
+        risk(20, isFinite(breakEvenNights)
+          ? 'It needs ' + round(breakEvenNights, 0) + ' let nights to cover the rent and you are only allowed ' + maxNights + '. It cannot break even.'
+          : 'Each night costs more to service than it earns. No occupancy fixes that.');
+      } else {
+        /* headroom, graded. Break-even at 40% against a modelled 65% is a
+           real business. Break-even at 62% against 65% is a job that pays
+           nothing the first time a boiler goes. */
+        var head = arb.headroom;
+        var tight = Math.round(clamp((20 - head) / 20 * 14, 0, 14));
+        if (tight >= 1) risk(tight, 'Break-even is ' + round(breakEvenOcc, 0) + '% occupancy against a modelled ' +
+          round(steadyOcc, 0) + '% — only ' + round(head, 0) + ' points of headroom. The rent still arrives in February.');
+      }
+
+      if (mkt.peakShare > 0.45) risk(5, 'Seasonal market on a twelve-month rent. The quiet half of the year has to be paid for out of the busy half.');
+      if (year1.net < 0)        risk(6, 'Year one loses ' + cur + round(Math.abs(year1.net), 0) + ' after the no-reviews ramp. That is cash you need in the bank before you sign.');
+    }
+
     if (comps.length < 3)     risk(6, 'Fewer than three comparables — the range below is wide for a reason.');
     if (minStay >= 5)         risk(4, 'A five-night minimum removes most of the weekend market.');
     if (mkt.peakShare > 0.45) risk(4, 'Heavily seasonal: a bad summer is a bad year, with no second chance.');
@@ -290,18 +458,38 @@
        carry the same one — so something else has to notice when the mortgage
        is eating the whole return. Without this, a property clearing £2,600
        against a £30k mortgage scores the same as one clearing £22,400. */
-    if (steady.net < 0) {
-      risk(14, 'On these inputs it does not cover its own costs at steady state.');
-    } else {
-      /* graded, not a cliff — otherwise £7,499 and £3,899 of net score the same */
-      var thin = Math.round(clamp((0.25 - steady.margin) / 0.25 * 10, 0, 10));
-      if (thin >= 1) risk(thin, 'It clears its costs by only ' + round(steady.margin * 100, 0) +
-        '% of revenue. One bad season, one boiler, and that is gone.');
+    if (!isRent) {
+      if (steady.net < 0) {
+        risk(14, 'On these inputs it does not cover its own costs at steady state.');
+      } else {
+        /* graded, not a cliff — otherwise £7,499 and £3,899 of net score the same */
+        var thin = Math.round(clamp((0.25 - steady.margin) / 0.25 * 10, 0, 10));
+        if (thin >= 1) risk(thin, 'It clears its costs by only ' + round(steady.margin * 100, 0) +
+          '% of revenue. One bad season, one boiler, and that is gone.');
+      }
     }
     if (!input.proPhotos)     risk(3, 'No professional photography. It is the cheapest lever on this whole page.');
 
     var raw = yieldPts + demandPts + confPts - riskPts;
     var total = clamp(Math.round(raw), 0, 100);
+
+    /* Permission to sublet is a CEILING, not a deduction.
+       A deduction was wrong and I had it wrong first: a lovely flat with no
+       consent scored 67 and read "Workable", when in fact there is no
+       business at all until it is signed. This is the one place a hard cap
+       is right, because the quantity is not continuous — you either have
+       written permission or you do not, and no hot tub compensates.
+       It caps rather than zeroes so that ordering is preserved within each
+       state: a good deal awaiting signature still outranks a bad one. */
+    var consentCap = null;
+    if (isRent) {
+      var c = input.landlordConsent || 'none';
+      if (c === 'none') consentCap = 22;
+      else if (c === 'verbal') consentCap = 48;
+    }
+    var consentCapped = consentCap !== null && total > consentCap;
+    if (consentCapped) total = consentCap;
+
     var verdict = total >= 70 ? 'Strong' : total >= 50 ? 'Workable' : total >= 32 ? 'Marginal' : 'Weak';
 
     /* --- 10. what actually moves the number ------------------------------
@@ -310,15 +498,31 @@
        Note the recursion is depth-1 only: every branch passes _nested. */
     var levers = [];
     if (!input._nested) {
+      /* Structural improvements are only a lever if you own the place. You
+         cannot install a hot tub or lay a driveway in a flat you rent, so
+         offering it as advice to a rent-to-rent operator is noise dressed up
+         as insight — and it was topping the list at £5,570. */
+      var canAlter = !isRent;
       var trials = [
         ['Raise the nightly rate by ' + cur + '10', { ownRate: adr + 10 }],
         ['Drop the minimum stay to one night',       minStay > 1 ? { minStay: 1 } : null],
-        ['Add a hot tub',                            !(input.amenities || {}).hottub ? { amenities: Object.assign({}, input.amenities, { hottub: true }) } : null],
+        ['Add a hot tub',                            canAlter && !(input.amenities || {}).hottub ? { amenities: Object.assign({}, input.amenities, { hottub: true }) } : null],
         ['Professional photography',                 !input.proPhotos ? { proPhotos: true } : null],
         ['Turn on dynamic pricing',                  !input.dynamicPricing ? { dynamicPricing: true } : null],
         ['Allow pets',                               !(input.amenities || {}).pets ? { amenities: Object.assign({}, input.amenities, { pets: true }) } : null],
         ['Self-manage instead of paying a manager',  num(input.mgmtPct, 0) > 0 ? { mgmtPct: 0 } : null],
-        ['Add off-street parking',                   !(input.amenities || {}).parking ? { amenities: Object.assign({}, input.amenities, { parking: true }) } : null]
+        ['Add off-street parking',                   canAlter && !(input.amenities || {}).parking ? { amenities: Object.assign({}, input.amenities, { parking: true }) } : null],
+        ['Add a proper desk and fast wifi',          isRent && !(input.amenities || {}).workspace ? { amenities: Object.assign({}, input.amenities, { workspace: true }) } : null],
+        ['Fit a keysafe or smart lock for self check-in',
+                                                     isRent && !(input.amenities || {}).selfin ? { amenities: Object.assign({}, input.amenities, { selfin: true }) } : null],
+        /* The one lever that only exists in rent-to-rent, and the strongest
+           one there is: it lands in full, every month, with no occupancy
+           risk attached. Negotiating the rent beats almost any amount of
+           listing optimisation. */
+        ['Negotiate ' + cur + '100 a month off the rent',
+                                                     isRent && fixedMonthly > 100 ? { monthlyRent: fixedMonthly - 100 } : null],
+        ['Get a 2-month rent-free fitting-out period',
+                                                     isRent && fixedMonthly > 0 ? { monthlyRent: fixedMonthly * 10 / 12 } : null]
       ];
       trials.forEach(function (t) {
         if (!t[1]) return;
@@ -329,7 +533,7 @@
     }
 
     /* --- 11. rules that apply to this property --------------------------- */
-    var flags = region.flags.concat(UNIVERSAL_FLAGS);
+    var flags = region.flags.concat(isRent ? RENT_FLAGS : UNIVERSAL_FLAGS);
 
     return {
       currency: cur,
@@ -338,8 +542,10 @@
       occupancy: { steady: steadyOcc, year1: year1Occ, lines: occLines, rampFactor: rampFactor },
       nights: { steady: steadyNights, year1: year1Nights, cap: capNights },
       steady: steady, year1: year1, range: range,
+      model: isRent ? 'rent' : 'own', arb: arb,
       score: { total: total, verdict: verdict, yield: yieldPts, yieldBasis: yieldBasis,
-               demand: demandPts, confidence: confPts, riskDeduction: riskPts, risks: risks },
+               demand: demandPts, confidence: confPts, riskDeduction: riskPts, risks: risks,
+               uncapped: clamp(Math.round(raw), 0, 100), consentCap: consentCap, consentCapped: consentCapped },
       alt: alt,
       levers: levers,
       market: mkt, region: region, flags: flags,
@@ -347,7 +553,8 @@
     };
   }
 
-  var api = { score: score, MARKETS: MARKETS, AMENITIES: AMENITIES, REGIONS: REGIONS, bedWeight: bedWeight };
+  var api = { score: score, MARKETS: MARKETS, AMENITIES: AMENITIES, REGIONS: REGIONS,
+              RENT_FLAGS: RENT_FLAGS, UNIVERSAL_FLAGS: UNIVERSAL_FLAGS, bedWeight: bedWeight };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.STR = api;

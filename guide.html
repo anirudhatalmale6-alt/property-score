@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Renting Other People's Property on Airbnb — the A to Z, UK</title>
+<meta name="description" content="A full curriculum for the UK rent-to-rent short-let business: finding landlords, choosing a location, getting consent in writing, and the numbers that decide it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F3EFE6; --card:#FDFBF6; --ink:#171A17; --ink-2:#4B5150; --ink-3:#7C8382;
+  --rule:#171A1712; --rule-2:#171A1726;
+  --rust:#A93E1C; --rust-soft:#A93E1C14;
+  --green:#2C6B4E; --green-soft:#2C6B4E14;
+  --amber:#8A6410; --amber-soft:#8A641014;
+  --shadow:4px 4px 0 var(--ink);
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:400 16px/1.62 'Public Sans',system-ui,sans-serif;
+  background-image:radial-gradient(#171A1708 1px,transparent 1px);background-size:3px 3px}
+h1,h2,h3,h4{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.02em;line-height:1.14;margin:0}
+a{color:var(--rust)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+
+header.top{border-bottom:2px solid var(--ink);background:var(--card)}
+.mast{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;padding:22px 0 18px}
+.brand{font-family:'Fraunces',serif;font-size:24px;font-weight:700;letter-spacing:-.03em}
+.brand i{font-style:normal;color:var(--rust)}
+.kicker{font:600 11px/1 'Public Sans',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.mast a.tool{font:600 13px/1 'Public Sans',sans-serif;text-decoration:none;color:var(--paper);
+  background:var(--ink);border:2px solid var(--ink);padding:11px 15px;box-shadow:var(--shadow)}
+.mast a.tool:hover{background:var(--rust);border-color:var(--rust)}
+
+.hero{padding:44px 0 36px;border-bottom:2px solid var(--ink)}
+.hero h1{font-size:clamp(32px,5.2vw,58px);max-width:19ch}
+.hero h1 em{font-style:italic;color:var(--rust)}
+.hero p{max-width:64ch;color:var(--ink-2);font-size:18px;margin:18px 0 0}
+
+.layout{display:grid;grid-template-columns:minmax(0,258px) minmax(0,1fr);gap:38px;padding:32px 0 90px;align-items:start}
+@media(max-width:960px){.layout{grid-template-columns:1fr;gap:22px}}
+
+nav.toc{position:sticky;top:20px;border:2px solid var(--ink);background:var(--card);box-shadow:var(--shadow)}
+@media(max-width:960px){nav.toc{position:static}}
+nav.toc h2{font-size:15px;padding:12px 15px;background:var(--ink);color:var(--paper);border-bottom:2px solid var(--ink)}
+nav.toc ol{list-style:none;margin:0;padding:8px 0;counter-reset:t}
+nav.toc li{counter-increment:t}
+nav.toc a{display:grid;grid-template-columns:auto 1fr;gap:9px;padding:7px 15px;font-size:13.5px;
+  text-decoration:none;color:var(--ink-2);line-height:1.35}
+nav.toc a::before{content:counter(t,decimal-leading-zero);font-family:var(--mono);font-size:11px;color:var(--rust);padding-top:2px}
+nav.toc a:hover{background:var(--rust-soft);color:var(--ink)}
+nav.toc .done{color:var(--ink);font-weight:600}
+nav.toc em{font-style:normal;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--green);border:1px solid currentColor;border-radius:99px;padding:2px 5px;margin-left:7px;white-space:nowrap}
+
+.mod{border:2px solid var(--ink);background:var(--card);box-shadow:var(--shadow);margin-bottom:26px}
+.mod > .head{padding:16px 20px;border-bottom:2px solid var(--ink);background:var(--ink);color:var(--paper);
+  display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between}
+.mod > .head h2{font-size:20px;color:var(--paper)}
+.mod > .head .n{font-family:var(--mono);font-size:12px;color:#FFFFFF7A}
+.mod > .body{padding:22px 24px}
+@media(max-width:600px){.mod > .body{padding:18px 16px}}
+.mod p{margin:0 0 14px;max-width:74ch}
+.mod p:last-child{margin-bottom:0}
+.mod h3{font-size:19px;margin:26px 0 10px}
+.mod h4{font-size:15.5px;margin:20px 0 8px;font-family:'Public Sans',sans-serif;font-weight:700;letter-spacing:0}
+.mod ul,.mod ol{margin:0 0 14px;padding-left:22px;max-width:74ch}
+.mod li{margin-bottom:7px}
+.lead{font-size:17px;color:var(--ink-2)}
+
+.pill{display:inline-block;font:600 10.5px/1 'Public Sans',sans-serif;letter-spacing:.13em;text-transform:uppercase;
+  border:1.5px solid currentColor;padding:5px 8px;border-radius:99px}
+.pill.full{color:var(--green)}
+.pill.out{color:var(--ink-3)}
+
+.callout{border-left:4px solid var(--rust);background:var(--rust-soft);padding:14px 17px;margin:18px 0}
+.callout b{display:block;font-size:14px;color:var(--rust);margin-bottom:5px}
+.callout p{font-size:14.5px;margin-bottom:8px}
+.callout p:last-child{margin-bottom:0}
+.good{border-left-color:var(--green);background:var(--green-soft)}
+.good b{color:var(--green)}
+.warn{border-left-color:var(--amber);background:var(--amber-soft)}
+.warn b{color:var(--amber)}
+
+table{width:100%;border-collapse:collapse;margin:6px 0 16px;font-size:14.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--rule-2);vertical-align:top}
+th{font:600 11px/1 'Public Sans',sans-serif;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3)}
+td.n{font-family:var(--mono);text-align:right;white-space:nowrap}
+.tw{overflow-x:auto}
+
+.script{border:2px dashed var(--rule-2);padding:16px 18px;margin:16px 0;background:#171A1706}
+.script p{font-size:15px;margin-bottom:11px}
+.script .who{font:600 11px/1 'Public Sans',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--rust);margin-bottom:6px}
+
+.outline{display:grid;gap:9px;margin:4px 0 0}
+.outline .l{display:grid;grid-template-columns:auto 1fr;gap:11px;font-size:14.5px;align-items:start}
+.outline .l span{font-family:var(--mono);font-size:11.5px;color:var(--rust);padding-top:3px}
+
+footer{border-top:2px solid var(--ink);background:var(--card);padding:26px 0 40px}
+footer p{max-width:78ch;font-size:14px;color:var(--ink-2);margin:0 0 10px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap mast">
+    <div>
+      <div class="kicker">A course outline</div>
+      <div class="brand">Property<i>Score</i> &mdash; the guide</div>
+    </div>
+    <a class="tool" href="index.html">&larr; Back to the scorer</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <h1>Renting other people's property and letting it on <em>Airbnb</em>.</h1>
+    <p>The UK version, written for somebody starting from nothing. Two modules are written out in full below,
+    because they are the two things you asked about: where the landlords come from, and how to pick the place.
+    The rest is a curriculum, so you can see the whole shape before deciding how much of it to have written.</p>
+  </div>
+</section>
+
+<div class="wrap layout">
+
+  <nav class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#m1">What the business actually is</a></li>
+      <li><a href="#m2">Is it legal, and when is it not</a></li>
+      <li><a class="done" href="#m3">Choosing where<em>full</em></a></li>
+      <li><a class="done" href="#m4">Finding landlords<em>full</em></a></li>
+      <li><a href="#m5">The pitch, and the objections</a></li>
+      <li><a href="#m6">Getting consent in writing</a></li>
+      <li><a href="#m7">The agreement you sign</a></li>
+      <li><a href="#m8">Money in, money out</a></li>
+      <li><a href="#m9">Furnishing it</a></li>
+      <li><a href="#m10">The listing itself</a></li>
+      <li><a href="#m11">Pricing through the year</a></li>
+      <li><a href="#m12">Cleaning and turnarounds</a></li>
+      <li><a href="#m13">Guests, and the bad night</a></li>
+      <li><a href="#m14">Safety and compliance</a></li>
+      <li><a href="#m15">Insurance</a></li>
+      <li><a href="#m16">Tax and structure</a></li>
+      <li><a href="#m17">Systems and handing over</a></li>
+      <li><a href="#m18">Unit two, and unit five</a></li>
+      <li><a href="#m19">When to walk away</a></li>
+      <li><a href="#m20">The first ninety days</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <!-- ============ MODULE 3 — FULL ============ -->
+    <article class="mod" id="m3">
+      <div class="head">
+        <h2>Choosing where</h2>
+        <span class="n">Module 03 <span class="pill full">Written in full</span></span>
+      </div>
+      <div class="body">
+        <p class="lead">Almost everyone picks the location backwards. They look for the place with the highest
+        nightly rate, because that is the number Airbnb shows you. The nightly rate is not the business. The
+        <b>gap</b> is the business.</p>
+
+        <h3>The only ratio that matters</h3>
+        <p>You pay rent twelve times a year whatever happens. You earn on the nights you fill. So the question
+        is not "what can I charge?" but "how many nights must I fill before I have earned a single pound, and
+        can I realistically fill more than that?"</p>
+        <p>Work it out like this, for any flat you are looking at:</p>
+        <div class="tw"><table>
+          <tr><th>Step</th><th>Example</th></tr>
+          <tr><td>Rent the landlord wants, per year</td><td class="n">£1,100 &times; 12 = £13,200</td></tr>
+          <tr><td>Bills, wifi, council tax, insurance, per year</td><td class="n">£3,360</td></tr>
+          <tr><td>Fixed cost you must cover</td><td class="n">£16,560</td></tr>
+          <tr><td>What one booked night leaves you, after the platform fee and the cleaner</td><td class="n">£152</td></tr>
+          <tr><td><b>Nights you must fill before you earn anything</b></td><td class="n"><b>109</b></td></tr>
+          <tr><td>Nights a well-run listing there actually fills</td><td class="n">~223</td></tr>
+          <tr><td>Your headroom</td><td class="n">114 nights</td></tr>
+        </table></div>
+        <p>That flat works. A flat where you must fill 190 nights to break even and the market gives you 210 is
+        not a business, it is a job with a twelve-month liability attached. The <a href="index.html">scorer</a>
+        does this arithmetic for you &mdash; switch it to "I rent it and sublet it" and it shows the break-even
+        line and the headroom directly.</p>
+
+        <div class="callout warn">
+          <b>The London trap</b>
+          <p>London looks like the obvious place: highest rates in the country. It is the hardest place in the
+          UK to do this. A whole home in Greater London can only be let short-term for <b>90 nights a year</b>
+          without planning permission for change of use, and Airbnb enforces the limit on its own platform. Run
+          the sum above with 90 nights instead of 223 and almost every London flat fails.</p>
+          <p>People do operate in London. They do it with planning consent already in place, or by letting rooms
+          rather than whole units, or by targeting stays over 90 days where the cap does not apply, which is a
+          corporate-let business with different customers. None of those are the beginner version, and anyone
+          selling you the beginner version in London is not telling you about the cap.</p>
+        </div>
+
+        <h3>What a good location has</h3>
+        <ul>
+          <li><b>Demand that is not only in August.</b> A city with hospitals, universities, courts, an airport
+          or a big employer has midweek demand all year. A seaside town has eight brilliant weeks and a long
+          silence, and the rent does not pause for the silence.</li>
+          <li><b>Rent that has not caught up.</b> You want somewhere the long-let market is cheap relative to
+          what visitors pay. That is usually a street or two out from the obvious postcode.</li>
+          <li><b>More than one reason to visit.</b> A town that empties when one factory closes or one festival
+          moves is a town where your whole year depends on somebody else's decision.</li>
+          <li><b>Walkable to the reason people come.</b> Ten minutes on foot from the station, the hospital or
+          the front is worth more than a bigger flat twenty minutes out.</li>
+          <li><b>No local restriction closing in.</b> Check the council's website for licensing schemes and
+          Article 4 directions before you fall in love with a postcode.</li>
+        </ul>
+
+        <h3>Where the rules differ across the UK</h3>
+        <div class="tw"><table>
+          <tr><th>Where</th><th>What binds you</th></tr>
+          <tr><td>London</td><td>90 nights a year for a whole home without planning permission. This is the single biggest constraint in the country.</td></tr>
+          <tr><td>Scotland</td><td>A short-term let licence is mandatory everywhere &mdash; operating without one is an offence. In control areas such as Edinburgh you also need planning permission, which is often refused.</td></tr>
+          <tr><td>Wales</td><td>To be taxed as a business rather than council tax you must be available 252 days and actually let 182. Miss it and some counties charge a council tax premium of up to 300%.</td></tr>
+          <tr><td>England, outside London</td><td>A registration scheme is legislated but not yet fully live, and a separate planning use class has been consulted on. Treat today's freedom as temporary.</td></tr>
+          <tr><td>Northern Ireland</td><td>Tourism NI must certify the property before you can advertise it at all.</td></tr>
+        </table></div>
+
+        <h3>How to check a place without guessing</h3>
+        <ol>
+          <li>Open Airbnb, search the town, set dates for a random <b>Tuesday in November</b>. Not August &mdash;
+          anywhere looks busy in August. What is still available tells you what the quiet half of the year is.</li>
+          <li>Note the nightly rates of six flats of the size you want. Ignore the outlier asking £400.</li>
+          <li>Open the listings' calendars. Blocked dates months out are bookings. A calendar that is wide open
+          in ten weeks' time is telling you something.</li>
+          <li>Open Rightmove for the same postcode and find what that flat rents for long term.</li>
+          <li>Do the break-even sum above. If the headroom is under about 40 nights, walk.</li>
+        </ol>
+        <div class="callout">
+          <b>One honest warning about the numbers</b>
+          <p>Airbnb shows you asking prices, not achieved prices. A listing displaying £150 a night that sits
+          empty is not a £150 listing. This is why the scorer gives you a range rather than a single confident
+          figure, and why the range gets wider when your comparables disagree with each other. Anyone who hands
+          you one number for a market has either bought expensive data or is guessing.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============ MODULE 4 — FULL ============ -->
+    <article class="mod" id="m4">
+      <div class="head">
+        <h2>Finding landlords who will say yes</h2>
+        <span class="n">Module 04 <span class="pill full">Written in full</span></span>
+      </div>
+      <div class="body">
+        <p class="lead">This is the part people find hardest, and the part the courses are vaguest about. It is
+        not a secret technique. It is understanding what a landlord actually wants, then being the person who
+        offers it, in writing, without wasting their time.</p>
+
+        <h3>What a landlord is actually buying</h3>
+        <p>They are not buying "passive income". They already have that. What keeps landlords awake is the
+        <em>gap</em>: the void months, the tenant who stops paying, the Section 21 that now takes the best part
+        of a year, the call about the boiler at ten on a Sunday night, and the state of the place at the end.</p>
+        <p>So what you are selling is <b>certainty and condition</b>. Rent on the first of the month, every month,
+        including the months it is empty, because the emptiness is your problem not theirs. No tenant to evict,
+        because there is no tenant. A property cleaned professionally between every stay rather than once every
+        two years. And it comes back furnished and in better condition than it went out.</p>
+        <p>You are not offering them more money. Usually you are offering slightly <em>less</em> than the open
+        market rent, and that is fine, because you are removing the risk they are paid to carry. Landlords who
+        understand this say yes quickly. Landlords who want both the top rent and no risk are not your customer,
+        and you should find that out in the first ten minutes rather than the fourth meeting.</p>
+
+        <h3>Where they actually are</h3>
+        <h4>1. Letting agents &mdash; the fastest route, and the most misunderstood</h4>
+        <p>Agents are not the enemy and they are not the decision-maker. They are a gate. What an agent wants is
+        a placed property and a fee with no comeback on them. Ask them directly for a <b>company let</b>: a
+        tenancy in your limited company's name, with written permission for short-term letting. Say those words.
+        An agent who has heard the phrase before will tell you within a minute whether their landlords do it.</p>
+        <p>Ask specifically about properties that have been on their books more than a month, properties that
+        need work, and landlords who have just had a bad tenancy. Those are the ones with a motivated owner.</p>
+        <div class="callout">
+          <b>The mistake that ends most of these deals later</b>
+          <p>An agent saying "yes that's fine" is not consent. Most agents have no authority to permit
+          subletting, and their word evaporates the moment a neighbour complains or the property changes hands.
+          You need it from the landlord, in writing, naming short lets specifically. Module 6 is entirely about
+          this because it is the thing that turns a working business into a lost deposit and a claim for your
+          profits.</p>
+        </div>
+
+        <h4>2. Landlords advertising directly</h4>
+        <p>OpenRent, Gumtree, SpareRoom and local Facebook groups are full of people letting their own property
+        without an agent. They are the decision-maker, so you can have a real conversation immediately. They are
+        also less likely to have heard of this arrangement, so you will do more explaining.</p>
+
+        <h4>3. Landlord associations and local meetings</h4>
+        <p>The National Residential Landlords Association has regional branches and meetings. Local landlord
+        groups meet in pubs and function rooms in most sizeable towns. Go, say plainly what you do, and be the
+        person who understood the rules. You will meet people who own six flats and are tired of four of them.</p>
+
+        <h4>4. Property that has been empty a while</h4>
+        <p>A flat that has been listed for six weeks is costing its owner money every day. Filter by longest
+        listed. That is the whole technique.</p>
+
+        <h4>5. Landlords who are quietly leaving the market</h4>
+        <p>Between the tax changes, the interest rate rises and tightening regulation, a lot of small landlords
+        want out but do not want to sell into a slow market. A guaranteed rent arrangement gives them an exit
+        from the work without an exit from the asset. This is currently the warmest group in the country.</p>
+
+        <div class="callout warn">
+          <b>Two approaches to avoid</b>
+          <p><b>Letters through doors of empty houses.</b> Slow, and it mostly reaches people who are not
+          landlords and are now annoyed.</p>
+          <p><b>Answering a normal tenancy advert without saying what you plan to do.</b> This is how people end
+          up in breach from day one. Say what you are doing in the first message, every time. You will get fewer
+          replies and every one of them will be worth having.</p>
+        </div>
+
+        <h3>What to say</h3>
+        <p>Short, specific, and it names the thing. If they are going to say no, you want the no today.</p>
+        <div class="script">
+          <div class="who">First message to a private landlord</div>
+          <p>Hello &mdash; I saw your flat on Nelson Road.</p>
+          <p>I run short-stay accommodation locally for contractors and visiting families. I'm looking to take
+          a property on a three-year company let: I'd pay you £1,050 a month, on the 1st, twelve months a year
+          including any month it sits empty, and I'd cover the bills, the cleaning and the maintenance under
+          £150.</p>
+          <p>In exchange I'd need your written permission to let it on a short-stay basis. I'd furnish it at my
+          own cost and it comes back to you furnished at the end.</p>
+          <p>I know that's not the arrangement you advertised, so if it's not for you that's completely fine.
+          If it is worth a conversation I can come and see it this week.</p>
+        </div>
+        <p>Note what that message does. It names the rent, so nobody wastes an afternoon. It names the
+        permission, so the deal cannot quietly fail later. It gives them an easy way to say no, which makes the
+        yes real. And it does not use the phrase "rent to rent", which a lot of landlords have now read bad
+        things about &mdash; not because you are hiding anything, but because "company let with written consent
+        for short stays" describes it more precisely.</p>
+
+        <h3>The objections, and honest answers</h3>
+        <div class="tw"><table>
+          <tr><th>They say</th><th>You say</th></tr>
+          <tr><td>"My mortgage won't allow it."</td><td>"Worth checking &mdash; some buy-to-let products do permit it with consent, and some don't. If yours doesn't, that's a genuine no and I'd rather we found out now."</td></tr>
+          <tr><td>"What if you stop paying?"</td><td>"Then you'd remove me the same way you'd remove any tenant, and you'd still have the deposit and the furniture. I'd also suggest a break clause you can use at six months if it isn't working."</td></tr>
+          <tr><td>"Strangers in my property every week?"</td><td>"Guests are ID-verified and reviewed, there's a minimum stay, and the place is professionally cleaned between every booking. In practice it's inspected more often than a tenanted flat."</td></tr>
+          <tr><td>"I could get £1,200 on the open market."</td><td>"You could, in the months it's let. I'm offering £1,050 for all twelve, with no voids, no arrears and no eviction. Whether that trade is worth £150 a month is genuinely your call."</td></tr>
+          <tr><td>"It's leasehold."</td><td>"Then let's read the lease before either of us spends more time on it. If the head lease bars short lets, your freeholder can act against you even if you're happy, so it isn't a risk worth taking."</td></tr>
+        </table></div>
+
+        <div class="callout good">
+          <b>The number you should expect</b>
+          <p>Most people approach five landlords, get five noes, and conclude the model doesn't work. The
+          realistic figure is dozens of conversations for one signed agreement, and the first one is the slowest
+          because you have no track record to point at. Everyone selling a course showing three properties in
+          ninety days is showing you the survivor. Budget for a few months of asking, and make the asking cheap
+          &mdash; short messages, said plainly, to a lot of people.</p>
+        </div>
+      </div>
+    </article>
+
+    <!-- ============ THE REST — OUTLINE ============ -->
+    <article class="mod" id="m1">
+      <div class="head"><h2>The rest of the course</h2><span class="n">Modules 1&ndash;20 <span class="pill out">Outline</span></span></div>
+      <div class="body">
+        <p>The two modules above are written out so you can judge the depth and the tone. Here is everything
+        else, at lesson level, so you can see the whole shape before deciding what to have written.</p>
+
+        <h3 id="m2">1&ndash;2 &nbsp;Foundations</h3>
+        <div class="outline">
+          <div class="l"><span>1.1</span><div>What rent-to-rent is, and the three versions of it people confuse: guaranteed rent, management-only, and subletting.</div></div>
+          <div class="l"><span>1.2</span><div>Where the money actually comes from, and why the margin is thinner than the courses suggest.</div></div>
+          <div class="l"><span>1.3</span><div>What you need before you start: cash for the deposit and furnishings, a company, and a reserve for the quiet months.</div></div>
+          <div class="l"><span>1.4</span><div>An honest look at who this suits and who it does not.</div></div>
+          <div class="l"><span>2.1</span><div>It is legal. What makes it illegal: subletting without consent, breaching a head lease, operating unlicensed in Scotland, running an unlicensed HMO.</div></div>
+          <div class="l"><span>2.2</span><div>Why this model attracts Trading Standards attention, and how to be visibly on the right side of it.</div></div>
+          <div class="l"><span>2.3</span><div>The landlord's mortgage, the freeholder, and the insurer &mdash; three people who can end your business and never signed anything with you.</div></div>
+        </div>
+
+        <h3 id="m5">5&ndash;7 &nbsp;Getting the property</h3>
+        <div class="outline">
+          <div class="l"><span>5.1</span><div>The viewing: what to look at, what to photograph, what to ask that reveals a problem.</div></div>
+          <div class="l"><span>5.2</span><div>Negotiating the rent, and the four things worth more than a lower rent: length of term, a rent-free fitting-out period, a repairs threshold, and a break clause.</div></div>
+          <div class="l"><span>6.1</span><div>The consent letter, clause by clause &mdash; what it must name, who must sign it, and why an agent's email is not it.</div></div>
+          <div class="l"><span>6.2</span><div>Checking the lease and the mortgage conditions before you commit.</div></div>
+          <div class="l"><span>6.3</span><div>What to do when consent is refused: the version of the deal that still works, and when to walk.</div></div>
+          <div class="l"><span>7.1</span><div>Company let versus management agreement, and which one you actually want.</div></div>
+          <div class="l"><span>7.2</span><div>Deposit, inventory and schedule of condition &mdash; the photographs that save the argument later.</div></div>
+          <div class="l"><span>7.3</span><div>Where a solicitor is worth the money, and where it is not.</div></div>
+        </div>
+
+        <h3 id="m8">8&ndash;9 &nbsp;Money and setting up</h3>
+        <div class="outline">
+          <div class="l"><span>8.1</span><div>Building the model: fixed costs, contribution per night, break-even nights, headroom.</div></div>
+          <div class="l"><span>8.2</span><div>The first-year ramp. Why a listing with no reviews fills at roughly 80% of what an established one does, and what that means for month three.</div></div>
+          <div class="l"><span>8.3</span><div>The reserve. How much cash to have before you sign, and how to work it out rather than guess.</div></div>
+          <div class="l"><span>8.4</span><div>Every cost people forget: linen replacement, consumables, wifi, the standing charge, accountancy, the deep clean, the write-off.</div></div>
+          <div class="l"><span>9.1</span><div>Furnishing on a budget without it looking like it. What guests notice and what they never do.</div></div>
+          <div class="l"><span>9.2</span><div>The list: beds, mattress protectors, blackout, three sets of linen per bed, and the small things that generate five-star reviews.</div></div>
+          <div class="l"><span>9.3</span><div>Photography. The cheapest thing on this list and the one with the largest effect on occupancy.</div></div>
+        </div>
+
+        <h3 id="m10">10&ndash;13 &nbsp;Running it</h3>
+        <div class="outline">
+          <div class="l"><span>10.1</span><div>Writing the listing: the title, the first three photographs, and the description that answers the question people are actually asking.</div></div>
+          <div class="l"><span>10.2</span><div>Getting the first ten reviews, which is the hardest part of the whole year.</div></div>
+          <div class="l"><span>10.3</span><div>Airbnb, Booking.com and direct &mdash; what each costs you and what each brings.</div></div>
+          <div class="l"><span>11.1</span><div>Pricing across the year, minimum stays, gap nights, and the events calendar for your town.</div></div>
+          <div class="l"><span>11.2</span><div>Dynamic pricing tools: what they do, what they cost, and when they are worth it.</div></div>
+          <div class="l"><span>12.1</span><div>Finding a cleaner who will not let you down on a Friday, and what to pay them.</div></div>
+          <div class="l"><span>12.2</span><div>The changeover checklist, the linen system, and the restock cupboard.</div></div>
+          <div class="l"><span>13.1</span><div>House rules that are enforceable, ID and screening, and how to refuse a booking properly.</div></div>
+          <div class="l"><span>13.2</span><div>The party, the damage, the complaint from the neighbour, the guest who will not leave.</div></div>
+          <div class="l"><span>13.3</span><div>Reviews: getting good ones, and answering bad ones in a way that helps you.</div></div>
+        </div>
+
+        <h3 id="m14">14&ndash;16 &nbsp;Compliance, insurance, tax</h3>
+        <div class="outline">
+          <div class="l"><span>14.1</span><div>Gas safety, electrical certification, smoke and carbon monoxide alarms, fire risk assessment, furniture regulations.</div></div>
+          <div class="l"><span>14.2</span><div>When rooms let separately make it an HMO, and what that then requires.</div></div>
+          <div class="l"><span>14.3</span><div>The register for your nation, and the paperwork to keep.</div></div>
+          <div class="l"><span>15.1</span><div>Why standard landlord and standard home policies both exclude paying guests, and what to buy instead.</div></div>
+          <div class="l"><span>15.2</span><div>Public liability, contents, loss of income, and what the platform guarantee does not cover.</div></div>
+          <div class="l"><span>16.1</span><div>Sole trader or limited company, and the real trade-offs.</div></div>
+          <div class="l"><span>16.2</span><div>The Furnished Holiday Lettings regime was abolished in April 2025. What changed, and why older advice is wrong.</div></div>
+          <div class="l"><span>16.3</span><div>VAT &mdash; the threshold creeps up on people running several units.</div></div>
+          <div class="l"><span>16.4</span><div>Bookkeeping that takes ten minutes a week.</div></div>
+        </div>
+
+        <h3 id="m17">17&ndash;20 &nbsp;Growing, and stopping</h3>
+        <div class="outline">
+          <div class="l"><span>17.1</span><div>The systems that let you go on holiday: messaging, locks, the cleaner's calendar, the emergency contact.</div></div>
+          <div class="l"><span>18.1</span><div>Unit two. What breaks at three, and what breaks at five.</div></div>
+          <div class="l"><span>18.2</span><div>When to hire, and what the first person actually does.</div></div>
+          <div class="l"><span>19.1</span><div>The deals to refuse, and the warning signs in a landlord conversation.</div></div>
+          <div class="l"><span>19.2</span><div>Exiting a unit that is not working, without a fight.</div></div>
+          <div class="l"><span>20.1</span><div>A ninety-day plan with a checklist, from first landlord conversation to first booking.</div></div>
+        </div>
+
+        <div class="callout good" style="margin-top:26px">
+          <b>Why the tone is like this</b>
+          <p>There is a great deal of material online promising three properties in ninety days and £10,000 a
+          month. Most of it skips the consent question entirely, which is the one thing that decides whether
+          somebody keeps their money. A course that tells people the difficult parts is slower to sell and much
+          harder to complain about, and it is the only kind worth putting your name on.</p>
+        </div>
+      </div>
+    </article>
+
+  </main>
+</div>
+
+<footer>
+  <div class="wrap">
+    <p><b>This is education, not advice.</b> Nothing here is legal, tax, planning or financial advice. Rules
+    differ by nation and by council and they are changing quickly. Check the lease, check the mortgage
+    conditions, check your council's own website, and get the consent in writing.</p>
+    <p>Figures used in the worked examples are illustrative. <a href="index.html">The scorer</a> runs the same
+    arithmetic on your own numbers and shows every step.</p>
+  </div>
+</footer>
+
+</body>
+</html>

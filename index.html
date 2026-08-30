@@ -38,6 +38,9 @@ header.top{border-bottom:2px solid var(--ink);background:var(--card)}
 .brand{font-family:'Fraunces',serif;font-size:24px;font-weight:700;letter-spacing:-.03em}
 .brand i{font-style:normal;color:var(--rust)}
 .kicker{font:600 11px/1 'Public Sans',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+.guidelink{font:600 13px/1 'Public Sans',sans-serif;text-decoration:none;color:var(--paper);
+  background:var(--ink);border:2px solid var(--ink);padding:11px 15px;box-shadow:var(--shadow)}
+.guidelink:hover{background:var(--rust);border-color:var(--rust)}
 
 .hero{padding:44px 0 34px;border-bottom:2px solid var(--ink)}
 .hero h1{font-size:clamp(34px,5.6vw,62px);max-width:16ch}
@@ -70,6 +73,33 @@ select{font-family:'Public Sans',sans-serif}
 input:focus,select:focus{outline:2px solid var(--rust);outline-offset:1px;border-color:var(--rust)}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+/* The `hidden` attribute is weaker than any class rule that sets display,
+   and it fails silently — the element just stays on screen. Everything the
+   mode switch shows and hides is a .field or a grid child with its own
+   display, so hidden has to be made to win explicitly. */
+[hidden]{display:none !important}
+
+.modeswitch{display:grid;gap:8px}
+.modeswitch label{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:start;
+  padding:11px 13px;border:2px solid var(--ink);cursor:pointer;background:transparent;transition:background .12s}
+.modeswitch label:hover{background:#171A170A}
+.modeswitch input{grid-row:span 2;margin-top:3px;accent-color:var(--rust)}
+.modeswitch b{font-size:14px}
+.modeswitch span{font-size:12.5px;color:var(--ink-3);line-height:1.45}
+.modeswitch label:has(input:checked){background:var(--rust);color:var(--paper);border-color:var(--rust)}
+.modeswitch label:has(input:checked) span{color:#FFFFFFC0}
+
+.bemeter{margin:4px 0 16px}
+.bemeter .track{position:relative;height:40px;border:2px solid var(--ink);background:#171A170A;overflow:hidden}
+.bemeter .be{position:absolute;top:0;bottom:0;left:0;background:var(--rust);opacity:.16}
+.bemeter .head{position:absolute;top:0;bottom:0;background:var(--green);opacity:.22}
+.bemeter .mark{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.bemeter .cap{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed var(--rust)}
+.bemeter .legend{display:flex;justify-content:space-between;gap:12px;margin-top:7px;font-size:12px;color:var(--ink-3)}
+.bemeter .legend b{font-family:var(--mono);color:var(--ink)}
+.gate{border:2px solid var(--rust);background:#A93E1C10;padding:13px 15px;margin-bottom:16px}
+.gate b{display:block;font-size:14px;color:var(--rust);margin-bottom:4px}
+.gate p{font-size:13px;line-height:1.55;color:var(--ink-2)}
 .field{margin-bottom:12px}
 .hint{font-size:12px;color:var(--ink-3);margin:4px 0 0;line-height:1.4}
 
@@ -177,7 +207,7 @@ footer{border-top:2px solid var(--ink);background:var(--card);padding:26px 0;fon
       <div class="kicker">Short-let analysis</div>
       <div class="brand">Property<i>Score</i></div>
     </div>
-    <div class="kicker">Working demo &middot; every figure shows its arithmetic</div>
+    <a class="guidelink" href="guide.html">The A&ndash;Z guide &rarr;</a>
   </div>
 </header>
 
@@ -194,6 +224,16 @@ footer{border-top:2px solid var(--ink);background:var(--card);padding:26px 0;fon
   <form class="panel" id="f" autocomplete="off">
     <h2>The property</h2>
     <div class="body">
+
+      <fieldset>
+        <legend>Which business is this</legend>
+        <div class="modeswitch">
+          <label><input type="radio" name="model" value="own" id="modeOwn" checked>
+            <b>I own it</b><span>Or I am buying it. The fixed cost is a mortgage.</span></label>
+          <label><input type="radio" name="model" value="rent" id="modeRent">
+            <b>I rent it and sublet it</b><span>Rent-to-rent. No mortgage &mdash; but the rent is due every month regardless.</span></label>
+        </div>
+      </fieldset>
 
       <fieldset>
         <legend>Where and what</legend>
@@ -260,12 +300,31 @@ footer{border-top:2px solid var(--ink);background:var(--card);padding:26px 0;fon
         </div>
         <div class="row">
           <div><label for="monthlyRunning">Running costs / month</label><input type="number" id="monthlyRunning" value="280" min="0"></div>
-          <div><label for="monthlyFinance">Mortgage or rent / month</label><input type="number" id="monthlyFinance" value="850" min="0"></div>
+          <div class="ownOnly"><label for="monthlyFinance">Mortgage / month</label><input type="number" id="monthlyFinance" value="850" min="0"></div>
+          <div class="rentOnly" hidden><label for="monthlyRent">Rent you pay the landlord / month</label><input type="number" id="monthlyRent" value="1100" min="0"></div>
         </div>
-        <div class="field">
+        <div class="field ownOnly">
           <label for="longLetMonthly">If you let it long term instead (per month)</label>
           <input type="number" id="longLetMonthly" value="1150" min="0" placeholder="optional">
           <p class="hint">Optional, but this is the comparison that actually matters. Without it the score falls back to net margin.</p>
+        </div>
+        <div class="field rentOnly" hidden>
+          <label for="setupCapital">Money you put in up front</label>
+          <input type="number" id="setupCapital" value="9000" min="0">
+          <p class="hint">Deposit, first month, furniture, photography, the lot. This is the only capital you have at risk, so it is what the return gets measured against.</p>
+        </div>
+      </fieldset>
+
+      <fieldset class="rentOnly" hidden>
+        <legend>Permission</legend>
+        <div class="field">
+          <label for="landlordConsent">Are you allowed to sublet?</label>
+          <select id="landlordConsent">
+            <option value="written">Yes &mdash; in writing, and it names short lets</option>
+            <option value="verbal">Only verbally, or the agent said it was fine</option>
+            <option value="none" selected>No, or not asked yet</option>
+          </select>
+          <p class="hint">This is not a detail. Almost every tenancy bans subletting, and without written consent the landlord can end the tenancy, keep the deposit and claim the profit you made. It caps the score below because until it is signed there is no business to score.</p>
         </div>
       </fieldset>
 
@@ -305,6 +364,34 @@ footer{border-top:2px solid var(--ink);background:var(--card);padding:26px 0;fon
           <div><div class="k">Occupancy</div><div class="v num" id="mOcc"></div><div class="n" id="mOccN"></div></div>
           <div><div class="k">Nights let</div><div class="v num" id="mNights"></div><div class="n" id="mNightsN"></div></div>
         </div>
+      </div>
+    </div>
+
+    <div class="panel rentOnly" id="bePanel" hidden>
+      <h2>What you must fill before you earn anything</h2>
+      <div class="body">
+        <div class="gate" id="gateBox" hidden><b id="gateTitle"></b><p id="gateBody"></p></div>
+
+        <div class="bemeter">
+          <div class="track">
+            <i class="be" id="beFill"></i>
+            <i class="head" id="headFill"></i>
+            <i class="mark" id="beMark"></i>
+            <i class="cap" id="capMark" hidden></i>
+          </div>
+          <div class="legend">
+            <span>Break-even <b id="beOcc"></b></span>
+            <span>Headroom <b id="beHead"></b></span>
+            <span>Modelled <b id="beOccModelled"></b></span>
+          </div>
+        </div>
+
+        <p class="hint" id="beNote" style="margin-bottom:16px"></p>
+
+        <table><tbody id="arbTable"></tbody></table>
+        <p class="hint" style="margin-top:12px">A good arbitrage location is not the one with the highest nightly
+        rate. It is the one where the gap between break-even and what you can actually fill is widest &mdash; cheap
+        rent in a place people still want to stay. That gap is the whole business.</p>
       </div>
     </div>
 
@@ -432,13 +519,23 @@ footer{border-top:2px solid var(--ink);background:var(--card);padding:26px 0;fon
       cleaningFee: $('cleaningFee').value, cleaningCost: $('cleaningCost').value,
       platformFeePct: $('platformFeePct').value, mgmtPct: $('mgmtPct').value,
       monthlyRunning: $('monthlyRunning').value, monthlyFinance: $('monthlyFinance').value,
-      longLetMonthly: $('longLetMonthly').value
+      longLetMonthly: $('longLetMonthly').value,
+      model: $('modeRent').checked ? 'rent' : 'own',
+      monthlyRent: $('monthlyRent').value, setupCapital: $('setupCapital').value,
+      landlordConsent: $('landlordConsent').value
     };
   }
 
   function run(){
     var input = gather();
     var r = STR.score(input);
+    var isRent = r.model === 'rent';
+
+    /* show the fields that belong to the model being examined. Toggling the
+       attribute is enough only because [hidden] is forced in the stylesheet;
+       without that a class rule setting display wins and nothing hides. */
+    document.querySelectorAll('.rentOnly').forEach(function(el){ el.hidden = !isRent; });
+    document.querySelectorAll('.ownOnly').forEach(function(el){ el.hidden = isRent; });
 
     $('nickTag').textContent = $('nickname').value || '';
     $('marketNote').textContent = r.market.note;
@@ -504,7 +601,7 @@ footer{border-top:2px solid var(--ink);background:var(--card);padding:26px 0;fon
       ['Management fee (' + input.mgmtPct + '%)',      -s.mgmtFee,      -1],
       ['Cleaning paid out (' + Math.round(s.turns) + ' changeovers)', -s.cleaningCost, -1],
       ['Running costs',                      -s.running,       -1],
-      ['Mortgage or rent',                   -s.finance,       -1]
+      [isRent ? 'Rent to the landlord' : 'Mortgage', -s.finance, -1]
     ];
     var html = pl.filter(function(x){ return Math.abs(x[1]) > 0.5; }).map(function(x){
       return '<tr><td>' + x[0] + '</td><td class="n ' + (x[1] < 0 ? 'neg' : '') + '">' + m(x[1]) + '</td></tr>';
@@ -515,12 +612,70 @@ footer{border-top:2px solid var(--ink);background:var(--card);padding:26px 0;fon
 
     /* read the comparison from the engine rather than recomputing it here —
        two copies of the same formula is how two numbers on one page drift */
-    $('plNote').textContent = r.alt
-      ? 'Let long term at ' + m0(parseFloat(input.longLetMonthly)) + ' a month, the same property earns about ' +
-        m0(r.alt.longBeforeFinance) + ' a year before the mortgage, against ' + m0(r.alt.shortBeforeFinance) +
-        ' as a short let — a difference of ' + m(r.alt.gap) + ', or ' + (Math.round(r.alt.ratio * 100) / 100) +
-        '×, in return for the changeovers, the licensing and the seasonality.'
-      : 'Add a long-let figure on the left and this compares the two properly.';
+    $('plNote').textContent = isRent
+      ? 'The rent of ' + m0(r.arb.monthlyFixed - parseFloat(input.monthlyRunning || 0)) +
+        ' a month is the line that does not care how the year goes. It is payable twelve times whether you fill ' +
+        Math.round(r.nights.steady) + ' nights or none, which is why break-even matters more here than the total.'
+      : r.alt
+        ? 'Let long term at ' + m0(parseFloat(input.longLetMonthly)) + ' a month, the same property earns about ' +
+          m0(r.alt.longBeforeFinance) + ' a year before the mortgage, against ' + m0(r.alt.shortBeforeFinance) +
+          ' as a short let — a difference of ' + m(r.alt.gap) + ', or ' + (Math.round(r.alt.ratio * 100) / 100) +
+          '×, in return for the changeovers, the licensing and the seasonality.'
+        : 'Add a long-let figure on the left and this compares the two properly.';
+
+    /* ---- break-even panel (rent-to-rent only) ---- */
+    if (isRent) {
+      var a = r.arb;
+      var maxPct = 100;
+      var bePct   = isFinite(a.breakEvenOcc) ? Math.min(a.breakEvenOcc, maxPct) : maxPct;
+      var occPct  = Math.min(r.nights.steady / 365 * 100, maxPct);
+      $('beFill').style.width = bePct + '%';
+      $('headFill').style.left = bePct + '%';
+      $('headFill').style.width = Math.max(0, occPct - bePct) + '%';
+      $('beMark').style.left = occPct + '%';
+      $('capMark').hidden = !r.nights.cap;
+      if (r.nights.cap) $('capMark').style.left = (r.nights.cap / 365 * 100) + '%';
+
+      $('beOcc').textContent  = isFinite(a.breakEvenOcc) ? pc(a.breakEvenOcc) : 'never';
+      $('beHead').textContent = (a.headroom >= 0 ? '+' : '') + Math.round(a.headroom) + ' pts';
+      $('beOccModelled').textContent = pc(r.nights.steady / 365 * 100);
+
+      $('beNote').textContent = !a.reachable
+        ? (isFinite(a.breakEvenNights)
+            ? 'It needs ' + Math.round(a.breakEvenNights) + ' let nights a year to cover the rent and the standing costs, and it is only allowed ' + a.maxNights + '. On these numbers it cannot break even, however well it is run.'
+            : 'Each night costs more to service than it brings in. No amount of occupancy fixes that — the rate or the costs have to change.')
+        : 'It covers the rent and the standing costs at ' + pc(a.breakEvenOcc) + ' occupancy, and models ' +
+          pc(r.nights.steady / 365 * 100) + '. Everything in the green band is profit; everything left of it pays the landlord.';
+
+      var arows = [
+        ['Rent and standing costs, a year', m(a.annualFixed)],
+        ['What one let night contributes',  m(a.contribution) + ' of ' + m(a.perNightRevenue)],
+        ['Nights needed to break even',     isFinite(a.breakEvenNights) ? Math.round(a.breakEvenNights) + ' of ' + a.maxNights : 'unreachable'],
+        ['Profit a month, once established', m(a.monthlyProfit)],
+        ['Year one, after the no-reviews ramp', m(a.year1Profit)]
+      ];
+      if (a.setupCapital > 0) {
+        arows.push(['Return on the ' + m0(a.setupCapital) + ' you put in, once established',
+          a.cashOnCash === null ? '—' : Math.round(a.cashOnCash * 100) + '% a year']);
+        arows.push(['Time to get that money back, counting the ramp',
+          a.paybackMonths === null ? 'never, on these numbers' : Math.round(a.paybackMonths) + ' months']);
+      }
+      $('arbTable').innerHTML = arows.map(function(x){
+        return '<tr><td>' + x[0] + '</td><td class="n">' + x[1] + '</td></tr>';
+      }).join('');
+
+      var gate = r.score.consentCapped;
+      $('gateBox').hidden = !gate;
+      if (gate) {
+        var noPerm = input.landlordConsent === 'none';
+        $('gateTitle').textContent = noPerm
+          ? 'Capped at ' + r.score.consentCap + ' — you do not have permission to sublet'
+          : 'Capped at ' + r.score.consentCap + ' — a verbal yes is not permission';
+        $('gateBody').textContent = (noPerm
+          ? 'On the numbers alone this would score ' + r.score.uncapped + '. It does not, because there is no business here until the landlord agrees in writing. Subletting without consent is a breach of the tenancy: they can end it, keep the deposit and claim back the profit you made.'
+          : 'On the numbers alone this would score ' + r.score.uncapped + '. A letting agent usually has no authority to permit short lets, and a verbal agreement disappears the moment a neighbour complains. Get it in writing, from the landlord, naming short lets.');
+      }
+    }
 
     /* levers */
     var maxAbs = r.levers.reduce(function(a, l){ return Math.max(a, Math.abs(l.delta)); }, 1);

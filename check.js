@@ -29,7 +29,14 @@ var r = STR.score(base);
 
 near('identical 2-bed comps reproduce the rate exactly', r.baseAdr, 120, 0.01);
 near('no amenities means no uplift', r.amenityMultiplier, 1, 0.0001);
-near('city baseline occupancy carries through', r.occupancy.steady, 68 + 0 + 0 - 6 - 4, 0.01);
+near('city baseline occupancy carries through', r.occupancy.steady, 63 + 0 + 0 - 6 - 4, 0.01);
+/* 82, not 88. A stack of good decisions should not add up to an occupancy
+   nobody sustains over a full year — that arithmetic is how people talk
+   themselves into a twelve-month rent liability. */
+ok('the occupancy ceiling is believable', STR.score(Object.assign({}, base, {
+  market: 'city', proPhotos: true, dynamicPricing: true, instantBook: true, managed: true,
+  amenities: { hottub: true, view: true, parking: true, selfin: true, pets: true, workspace: true }
+})).occupancy.steady <= 82);
 
 /* the ramp is the number people leave out — pin it */
 near('year-one ramp factor is 0.80', r.occupancy.rampFactor, 0.80, 0.001);
@@ -218,6 +225,144 @@ ok('over-pricing is named as over-pricing',
 ok('workings are returned', r.workings.length >= 3, r.workings.length);
 ok('every working has a label and a detail',
   r.workings.every(function (x) { return x.label && x.detail; }));
+
+/* =======================================================================
+   RENT-TO-RENT.  A different business sharing the same engine: you do not
+   own the property, there is no mortgage, and the rent is due twelve times
+   a year whether or not anybody books.
+   Fixtures below are MEASURED off a probe run, not guessed — guessing them
+   is what cost two rounds last time.
+   ======================================================================= */
+
+var rentBase = {
+  model: 'rent', bedrooms: 2, market: 'city', region: 'england',
+  comps: [{ rate: 110, beds: 2 }, { rate: 125, beds: 2 }, { rate: 95, beds: 1 }, { rate: 140, beds: 3 }],
+  amenities: { workspace: true, selfin: true },
+  minStay: 2, avgStay: 3, instantBook: true, proPhotos: true, dynamicPricing: true,
+  cleaningFee: 45, cleaningCost: 40, platformFeePct: 3, mgmtPct: 0,
+  monthlyRunning: 260, monthlyRent: 1100, setupCapital: 9000,
+  landlordConsent: 'written'
+};
+function rent(o) { return STR.score(Object.assign({}, rentBase, o)); }
+var rr = rent({});
+
+ok('rent mode is reported as such', rr.model === 'rent', rr.model);
+
+/* --- the rent replaces the mortgage as the fixed cost ------------------- */
+near('the rent lands in the P&L as the fixed annual cost', rr.steady.finance, 1100 * 12, 0.01);
+ok('a mortgage figure is ignored in rent mode',
+  rent({ monthlyFinance: 4000 }).steady.net === rr.steady.net);
+ok('there is no long-let comparison, because it is not yours to let',
+  rr.alt === null);
+ok('and supplying one anyway changes nothing',
+  rent({ longLetMonthly: 1400 }).score.total === rr.score.total);
+
+/* --- break-even: the number the whole model turns on -------------------- */
+ok('break-even occupancy is below the modelled occupancy here',
+  rr.arb.breakEvenOcc < rr.occupancy.steady, [rr.arb.breakEvenOcc, rr.occupancy.steady]);
+/* the definition itself: at exactly break-even nights, net must be zero */
+var beNights = rr.arb.breakEvenNights;
+var atBE = rr.arb.perNightRevenue * (1 - 0.03) * beNights - (40 / 3) * beNights - rr.arb.annualFixed;
+near('at break-even nights the profit is exactly zero', atBE, 0, 1);
+ok('more rent pushes break-even up', rent({ monthlyRent: 1600 }).arb.breakEvenOcc > rr.arb.breakEvenOcc);
+ok('a higher nightly rate pulls break-even down', rent({ ownRate: 200 }).arb.breakEvenOcc < rr.arb.breakEvenOcc);
+
+/* --- headroom must be measured in NIGHTS, or the London cap escapes it --
+   This is the bug worth a test: in London the flat still models 79%
+   occupancy and still breaks even at 37%, which looks comfortable. It is
+   allowed 90 nights and needs 136. Occupancy cannot see that. */
+var lon = rent({ region: 'london' });
+near('the cap does not move break-even occupancy at all', lon.arb.breakEvenOcc, rr.arb.breakEvenOcc, 0.01);
+ok('but it does make it unreachable', lon.arb.reachable === false && rr.arb.reachable === true);
+ok('headroom goes negative under the cap', lon.arb.headroom < 0, lon.arb.headroom);
+ok('the London flat is judged Weak', lon.score.verdict === 'Weak', [lon.score.total, lon.score.verdict]);
+ok('and the reason names the nights, not the occupancy',
+  lon.score.risks.some(function (x) { return /90/.test(x.text) && /night/.test(x.text); }),
+  lon.score.risks.map(function (x) { return x.text; }));
+ok('planning consent lifts the cap and the verdict with it',
+  rent({ region: 'london', planningConsent: true }).arb.reachable === true);
+
+/* --- consent to sublet is a CEILING, not a deduction -------------------
+   A flat with no permission scored 67 and read "Workable" before this. */
+var written = rr, verbal = rent({ landlordConsent: 'verbal' }), none = rent({ landlordConsent: 'none' });
+ok('the underlying deal is identical in all three', written.steady.net === none.steady.net);
+ok('written consent scores best', written.score.total > verbal.score.total);
+ok('verbal beats nothing, and both are capped', verbal.score.total > none.score.total);
+ok('no consent can never read better than Weak', none.score.verdict === 'Weak', none.score.total);
+ok('verbal can never read better than Marginal',
+  ['Weak', 'Marginal'].indexOf(verbal.score.verdict) >= 0, verbal.score.verdict);
+ok('the cap is recorded so the page can explain itself', none.score.consentCapped === true);
+ok('the uncapped score is kept, so the cap is visible as a cap',
+  none.score.uncapped > none.score.total, [none.score.uncapped, none.score.total]);
+/* no amount of property quality buys its way past a missing signature */
+ok('a perfect property with no consent still cannot pass',
+  rent({ landlordConsent: 'none', monthlyRent: 400, setupCapital: 2000,
+         amenities: { workspace: true, selfin: true, pets: true } }).score.verdict === 'Weak');
+/* but ordering INSIDE a consent state is preserved — it caps, it does not flatten */
+ok('a good deal still outranks a bad one at the same consent level',
+  rent({ landlordConsent: 'none', monthlyRent: 700 }).score.total >=
+  rent({ landlordConsent: 'none', monthlyRent: 2400 }).score.total);
+ok('owner mode is untouched by any of this',
+  STR.score(Object.assign({}, base, { landlordConsent: 'none' })).score.total === r.score.total);
+
+/* --- the score must keep MOVING with the rent --------------------------
+   The first pair of scales saturated, so every rent from £700 to £1,700
+   scored exactly 87 — a £12,000 swing in annual profit, invisible. Same
+   failure as comparing after a shared cost: the number stops informing. */
+var ladder = [700, 900, 1100, 1300, 1500, 1700, 1900, 2100, 2400]
+  .map(function (m) { return rent({ monthlyRent: m }).score.total; });
+ok('score never rises as the rent rises',
+  ladder.every(function (v, i) { return i === 0 || v <= ladder[i - 1]; }), ladder);
+ok('and it is strictly graded, not a plateau', new Set(ladder).size >= 7, ladder);
+ok('the profit ladder falls with it too',
+  [700, 1500, 2400].map(function (m) { return rent({ monthlyRent: m }).steady.net; })
+    .every(function (v, i, a) { return i === 0 || v < a[i - 1]; }));
+
+/* --- cash on cash and payback ------------------------------------------ */
+near('cash on cash is net over the money actually put in',
+  rr.arb.cashOnCash, rr.steady.net / 9000, 0.0001);
+/* Payback comes out of YEAR ONE money first. Charging it against steady-state
+   profit answered "six months" where the truth was ten, and year one is
+   precisely the year in which people run out of cash. */
+near('payback is repaid out of year-one profit while year one is running',
+  rr.arb.paybackMonths, 9000 / (rr.year1.net / 12), 0.01);
+ok('and that is slower than the steady-state answer would have been',
+  rr.arb.paybackMonths > 9000 / (rr.steady.net / 12),
+  [rr.arb.paybackMonths, 9000 / (rr.steady.net / 12)]);
+/* when year one cannot cover it, the remainder spills into year two */
+var slow = rent({ setupCapital: 30000 });
+ok('a setup cost year one cannot cover spills past twelve months',
+  slow.arb.paybackMonths > 12, slow.arb.paybackMonths);
+near('and the spill is the shortfall at the steady-state rate',
+  slow.arb.paybackMonths, 12 + (30000 - slow.year1.net) / (slow.steady.net / 12), 0.01);
+ok('no setup capital means no invented return', rent({ setupCapital: 0 }).arb.cashOnCash === null);
+ok('a loss-making deal has no payback period',
+  rent({ monthlyRent: 4000 }).arb.paybackMonths === null);
+
+/* --- advice you cannot act on is not advice ---------------------------- */
+function leverLabels(x) { return x.levers.map(function (l) { return l.label; }); }
+ok('rent mode never suggests installing a hot tub in someone else\'s flat',
+  !leverLabels(rr).some(function (l) { return /hot tub|parking/i.test(l); }), leverLabels(rr));
+ok('owner mode still can', leverLabels(r).some(function (l) { return /hot tub/i.test(l); }));
+ok('rent mode offers the rent negotiation, which is the real lever',
+  leverLabels(rr).some(function (l) { return /off the rent/.test(l); }), leverLabels(rr));
+ok('levers are still ranked by money',
+  rr.levers.every(function (l, i) { return i === 0 || l.delta <= rr.levers[i - 1].delta; }));
+ok('the rent-free period is worth roughly two months of rent',
+  Math.abs(rr.levers.filter(function (l) { return /rent-free/.test(l.label); })[0].delta - 2200) < 1);
+
+/* --- the flags are the rent-to-rent ones, not the owner ones ----------- */
+var titles = rr.flags.map(function (f) { return f.title; }).join(' | ');
+ok('subletting consent is flagged first among the rent flags', /consent to sublet/i.test(titles), titles);
+ok('the twelve-month rent liability is flagged', /rent is due whether/i.test(titles));
+ok('the landlord\'s own lease and mortgage are flagged', /lease, mortgage/i.test(titles));
+ok('the abolished FHL regime is NOT shown to a rent-to-rent operator',
+  !/Furnished Holiday/i.test(titles), titles);
+ok('but the owner still sees it', /Furnished Holiday/i.test(r.flags.map(function (f) { return f.title; }).join(' | ')));
+ok('the regional rules still apply to both',
+  rent({ region: 'scotland' }).flags.some(function (f) { return /licence/i.test(f.title); }));
+
+ok('rent mode is deterministic too', JSON.stringify(rent({})) === JSON.stringify(rent({})));
 
 console.log('checks: ' + checks);
 console.log('PROBLEMS: ' + (fails.length ? '\n  - ' + fails.join('\n  - ') : 'none'));
