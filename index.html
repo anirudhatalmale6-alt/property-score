@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Short-Let Scorer — will this property actually work on Airbnb?</title>
+<meta name="description" content="Score a property's short-let potential and see every step of the arithmetic that produced the number.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F3EFE6; --card:#FDFBF6; --ink:#171A17; --ink-2:#4B5150; --ink-3:#7C8382;
+  --rule:#171A1712; --rule-2:#171A1726;
+  --rust:#A93E1C; --rust-soft:#A93E1C14;
+  --green:#2C6B4E; --green-soft:#2C6B4E14;
+  --amber:#8A6410; --amber-soft:#8A641014;
+  --shadow:4px 4px 0 var(--ink);
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font:400 16px/1.55 'Public Sans',system-ui,sans-serif;
+  /* faint paper grain — keeps a large flat area from looking like a screenshot */
+  background-image:radial-gradient(#171A1708 1px,transparent 1px);background-size:3px 3px;
+}
+h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;letter-spacing:-.02em;line-height:1.1;margin:0}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+a{color:var(--rust)}
+
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px}
+
+/* ---------- masthead ---------- */
+header.top{border-bottom:2px solid var(--ink);background:var(--card)}
+.mast{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;padding:22px 0 18px}
+.brand{font-family:'Fraunces',serif;font-size:24px;font-weight:700;letter-spacing:-.03em}
+.brand i{font-style:normal;color:var(--rust)}
+.kicker{font:600 11px/1 'Public Sans',sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+
+.hero{padding:44px 0 34px;border-bottom:2px solid var(--ink)}
+.hero h1{font-size:clamp(34px,5.6vw,62px);max-width:16ch}
+.hero h1 em{font-style:italic;color:var(--rust)}
+.hero p{max-width:60ch;color:var(--ink-2);font-size:18px;margin:18px 0 0}
+
+/* ---------- layout ---------- */
+.grid{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:32px;padding:32px 0 80px;align-items:start}
+@media(max-width:980px){.grid{grid-template-columns:1fr;gap:24px}}
+
+.panel{background:var(--card);border:2px solid var(--ink);box-shadow:var(--shadow)}
+.panel > h2{font-size:19px;padding:14px 18px;border-bottom:2px solid var(--ink);background:var(--ink);color:var(--paper)}
+.panel .body{padding:18px}
+form.panel{position:sticky;top:20px}
+@media(max-width:980px){form.panel{position:static}}
+
+fieldset{border:0;padding:0;margin:0 0 22px}
+fieldset:last-child{margin-bottom:0}
+legend{font:600 11px/1 'Public Sans',sans-serif;letter-spacing:.15em;text-transform:uppercase;color:var(--rust);
+  padding:0 0 9px;border-bottom:1px solid var(--rule-2);width:100%;margin-bottom:12px}
+label{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin:0 0 4px}
+input[type=text],input[type=number],select{
+  width:100%;padding:8px 10px;font:500 15px var(--mono);color:var(--ink);
+  background:#fff;border:1.5px solid var(--rule-2);border-radius:0;
+  /* the native dropdown popup is painted by the browser, not by this CSS —
+     color-scheme is what keeps it readable, and it inherits, so it is set here */
+  color-scheme:light;
+}
+select{font-family:'Public Sans',sans-serif}
+input:focus,select:focus{outline:2px solid var(--rust);outline-offset:1px;border-color:var(--rust)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.field{margin-bottom:12px}
+.hint{font-size:12px;color:var(--ink-3);margin:4px 0 0;line-height:1.4}
+
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+@media(max-width:520px){.checks{grid-template-columns:1fr}}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;font-weight:500;color:var(--ink);cursor:pointer;line-height:1.3}
+.check input{margin:1px 0 0;accent-color:var(--rust);width:15px;height:15px;flex:0 0 auto}
+
+/* comps */
+.comp{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-bottom:8px;align-items:center}
+.comp input{margin:0}
+.xbtn{border:1.5px solid var(--rule-2);background:#fff;width:32px;height:34px;cursor:pointer;font-size:16px;color:var(--ink-3);line-height:1}
+.xbtn:hover{border-color:var(--rust);color:var(--rust)}
+.addbtn{border:1.5px dashed var(--rule-2);background:transparent;padding:8px;width:100%;cursor:pointer;
+  font:600 13px 'Public Sans',sans-serif;color:var(--ink-2)}
+.addbtn:hover{border-color:var(--rust);color:var(--rust)}
+
+/* ---------- results ---------- */
+.verdict{display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center}
+@media(max-width:640px){.verdict{grid-template-columns:1fr;gap:16px}}
+.dial{position:relative;width:132px;height:132px;flex:0 0 auto}
+.dial svg{transform:rotate(-90deg);display:block}
+.dial .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dial .mid b{font:600 38px/1 var(--mono)}
+.dial .mid span{font:600 10px/1 'Public Sans',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-top:5px}
+.vlabel{font-family:'Fraunces',serif;font-size:36px;font-weight:600;letter-spacing:-.02em;line-height:1}
+.vsub{color:var(--ink-2);margin:8px 0 0;font-size:15px;max-width:52ch}
+
+.bigrange{margin-top:20px;padding-top:18px;border-top:1px solid var(--rule-2)}
+.bigrange .lab{font:600 11px/1 'Public Sans',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.bigrange .val{font:600 clamp(28px,4.4vw,44px)/1.05 var(--mono);letter-spacing:-.02em;margin:8px 0 0}
+.bigrange .val .to{color:var(--ink-3);font-weight:400;padding:0 6px}
+.bar{height:10px;background:var(--rust-soft);border:1.5px solid var(--ink);margin:14px 0 6px;position:relative}
+.bar i{position:absolute;top:-1.5px;bottom:-1.5px;background:var(--rust);display:block}
+.bar b{position:absolute;top:-7px;bottom:-7px;width:2px;background:var(--ink)}
+
+.sub{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule-2);border:1px solid var(--rule-2);margin-top:20px}
+@media(max-width:640px){.sub{grid-template-columns:1fr 1fr}}
+.sub div{background:var(--card);padding:12px 14px}
+.sub .k{font:600 10.5px/1 'Public Sans',sans-serif;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.sub .v{font:600 22px/1.1 var(--mono);margin-top:7px}
+.sub .n{font-size:12px;color:var(--ink-3);margin-top:4px;line-height:1.35}
+
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--rule)}
+th{font:600 10.5px/1 'Public Sans',sans-serif;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);
+  border-bottom:1.5px solid var(--rule-2)}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+th.n{font-family:'Public Sans',sans-serif}
+tr.total td{border-top:2px solid var(--ink);border-bottom:0;font-weight:700;font-size:16px;padding-top:12px}
+td.neg,.neg{color:var(--rust)}
+td.pos,.pos{color:var(--green)}
+tr.sm td{font-size:13px;color:var(--ink-2)}
+
+.work{list-style:none;padding:0;margin:0;counter-reset:wk}
+.work li{counter-increment:wk;display:grid;grid-template-columns:auto 1fr auto;gap:14px;
+  padding:11px 0;border-bottom:1px solid var(--rule);align-items:baseline}
+.work li:last-child{border-bottom:0}
+.work li::before{content:counter(wk,decimal-leading-zero);font:600 12px var(--mono);color:var(--rust)}
+.work .l{font-weight:600;font-size:14.5px}
+.work .d{display:block;font-weight:400;font-size:13px;color:var(--ink-2);margin-top:2px;line-height:1.45}
+.work .v{font:600 17px var(--mono);white-space:nowrap}
+
+.levers{list-style:none;padding:0;margin:0}
+.levers li{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:10px 0;border-bottom:1px solid var(--rule)}
+.levers li:last-child{border-bottom:0}
+.levers .lname{font-weight:600;font-size:14.5px}
+.levers .lbar{grid-column:1/-1;height:6px;background:var(--rule);position:relative}
+.levers .lbar i{position:absolute;left:0;top:0;bottom:0;background:var(--green)}
+.levers .lbar i.dn{background:var(--rust)}
+.levers .ld{font:600 16px var(--mono);white-space:nowrap}
+
+.flag{border-left:4px solid var(--amber);background:var(--amber-soft);padding:12px 14px;margin-bottom:10px}
+.flag.hard{border-left-color:var(--rust);background:var(--rust-soft)}
+.flag h4{margin:0 0 5px;font:600 14.5px 'Public Sans',sans-serif}
+.flag p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.5}
+.flag .tag{font:600 9.5px/1 'Public Sans',sans-serif;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--amber);display:inline-block;margin-bottom:5px}
+.flag.hard .tag{color:var(--rust)}
+
+.risklist{list-style:none;padding:0;margin:0}
+.risklist li{padding:8px 0 8px 22px;border-bottom:1px solid var(--rule);font-size:14px;position:relative;color:var(--ink-2)}
+.risklist li:last-child{border-bottom:0}
+.risklist li::before{content:'!';position:absolute;left:0;top:8px;font:700 12px var(--mono);color:var(--rust);
+  border:1.5px solid var(--rust);width:15px;height:15px;display:flex;align-items:center;justify-content:center}
+
+.honest{background:var(--ink);color:var(--paper);border:2px solid var(--ink);box-shadow:var(--shadow);margin-top:32px}
+.honest .body{padding:22px 24px}
+.honest h2{font-size:22px;color:var(--paper);margin-bottom:12px}
+.honest p{color:#F3EFE6BB;font-size:14.5px;max-width:74ch;margin:0 0 11px;line-height:1.6}
+.honest p:last-child{margin-bottom:0}
+.honest b{color:var(--paper)}
+
+.stack{display:flex;flex-direction:column;gap:24px}
+footer{border-top:2px solid var(--ink);background:var(--card);padding:26px 0;font-size:13.5px;color:var(--ink-2)}
+.pill{display:inline-block;font:600 10.5px/1 'Public Sans',sans-serif;letter-spacing:.12em;text-transform:uppercase;
+  border:1.5px solid var(--ink);padding:5px 9px;margin-left:10px;vertical-align:middle}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap mast">
+    <div>
+      <div class="kicker">Short-let analysis</div>
+      <div class="brand">Property<i>Score</i></div>
+    </div>
+    <div class="kicker">Working demo &middot; every figure shows its arithmetic</div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <h1>Will this property <em>actually</em> work as a short let?</h1>
+    <p>Enter what you can see on the listing site. This works out the nightly rate, the realistic occupancy, the first year with no reviews, and what is left after the mortgage &mdash; then shows you every step, so you can argue with a specific line rather than a single number you have to take on faith.</p>
+  </div>
+</section>
+
+<div class="wrap grid">
+
+  <!-- ============ INPUTS ============ -->
+  <form class="panel" id="f" autocomplete="off">
+    <h2>The property</h2>
+    <div class="body">
+
+      <fieldset>
+        <legend>Where and what</legend>
+        <div class="field">
+          <label for="nickname">Nickname (just for you)</label>
+          <input type="text" id="nickname" value="Whitstable 2-bed cottage">
+        </div>
+        <div class="row">
+          <div><label for="bedrooms">Bedrooms</label><input type="number" id="bedrooms" value="2" min="0.5" step="0.5"></div>
+          <div><label for="sleeps">Sleeps</label><input type="number" id="sleeps" value="4" min="1"></div>
+        </div>
+        <div class="field">
+          <label for="market">Type of location</label>
+          <select id="market"></select>
+          <p class="hint" id="marketNote"></p>
+        </div>
+        <div class="field">
+          <label for="region">Nation / region</label>
+          <select id="region"></select>
+        </div>
+        <label class="check" style="margin-top:8px"><input type="checkbox" id="planningConsent"> <span>I have planning permission for short-let use</span></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Comparable listings</legend>
+        <p class="hint" style="margin:-4px 0 12px">Find similar places nearby on Airbnb and put in their nightly rate and bedroom count. Three to six is enough. This is the single biggest driver of everything below.</p>
+        <div id="comps"></div>
+        <button type="button" class="addbtn" id="addComp">+ add a comparable</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>What it has</legend>
+        <div class="checks" id="amen"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>How you would run it</legend>
+        <div class="row">
+          <div><label for="minStay">Minimum stay (nights)</label><input type="number" id="minStay" value="2" min="1"></div>
+          <div><label for="avgStay">Average stay (nights)</label><input type="number" id="avgStay" value="3" min="1"></div>
+        </div>
+        <div class="field">
+          <label for="ownRate">Your own nightly rate (optional)</label>
+          <input type="number" id="ownRate" value="" min="0" placeholder="leave blank to use the comps">
+          <p class="hint">Fill this in and it overrides the modelled rate &mdash; but pricing well above the comps costs you occupancy, and that is applied.</p>
+        </div>
+        <div class="checks">
+          <label class="check"><input type="checkbox" id="proPhotos" checked> <span>Professional photography</span></label>
+          <label class="check"><input type="checkbox" id="instantBook" checked> <span>Instant Book on</span></label>
+          <label class="check"><input type="checkbox" id="dynamicPricing"> <span>Dynamic pricing tool</span></label>
+          <label class="check"><input type="checkbox" id="managed"> <span>Managed / co-hosted</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>The money</legend>
+        <div class="row">
+          <div><label for="cleaningFee">Cleaning fee charged</label><input type="number" id="cleaningFee" value="55" min="0"></div>
+          <div><label for="cleaningCost">Cleaning cost paid</label><input type="number" id="cleaningCost" value="45" min="0"></div>
+        </div>
+        <div class="row">
+          <div><label for="platformFeePct">Platform fee %</label><input type="number" id="platformFeePct" value="3" min="0" step="0.5"></div>
+          <div><label for="mgmtPct">Management %</label><input type="number" id="mgmtPct" value="0" min="0" step="1"></div>
+        </div>
+        <div class="row">
+          <div><label for="monthlyRunning">Running costs / month</label><input type="number" id="monthlyRunning" value="280" min="0"></div>
+          <div><label for="monthlyFinance">Mortgage or rent / month</label><input type="number" id="monthlyFinance" value="850" min="0"></div>
+        </div>
+        <div class="field">
+          <label for="longLetMonthly">If you let it long term instead (per month)</label>
+          <input type="number" id="longLetMonthly" value="1150" min="0" placeholder="optional">
+          <p class="hint">Optional, but this is the comparison that actually matters. Without it the score falls back to net margin.</p>
+        </div>
+      </fieldset>
+
+    </div>
+  </form>
+
+  <!-- ============ RESULTS ============ -->
+  <div class="stack">
+
+    <div class="panel">
+      <h2>The verdict <span id="nickTag" class="pill" style="border-color:var(--paper);color:var(--paper)"></span></h2>
+      <div class="body">
+        <div class="verdict">
+          <div class="dial">
+            <svg width="132" height="132" viewBox="0 0 132 132">
+              <circle cx="66" cy="66" r="56" fill="none" stroke="#171A1718" stroke-width="13"></circle>
+              <circle id="dialArc" cx="66" cy="66" r="56" fill="none" stroke="var(--rust)" stroke-width="13"
+                      stroke-linecap="butt" stroke-dasharray="0 999"></circle>
+            </svg>
+            <div class="mid"><b id="scoreNum" class="num">0</b><span>out of 100</span></div>
+          </div>
+          <div>
+            <div class="vlabel" id="verdictWord">&mdash;</div>
+            <p class="vsub" id="verdictWhy"></p>
+          </div>
+        </div>
+
+        <div class="bigrange">
+          <div class="lab">Likely gross revenue, steady state, once established</div>
+          <div class="val"><span id="rLow" class="num"></span><span class="to">to</span><span id="rHigh" class="num"></span></div>
+          <div class="bar"><i id="barFill"></i><b id="barMid"></b></div>
+          <p class="hint" id="bandWhy" style="margin-top:8px"></p>
+        </div>
+
+        <div class="sub">
+          <div><div class="k">Nightly rate</div><div class="v num" id="mAdr"></div><div class="n" id="mAdrN"></div></div>
+          <div><div class="k">Occupancy</div><div class="v num" id="mOcc"></div><div class="n" id="mOccN"></div></div>
+          <div><div class="k">Nights let</div><div class="v num" id="mNights"></div><div class="n" id="mNightsN"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Year one is not steady state</h2>
+      <div class="body">
+        <p style="margin:0 0 16px;color:var(--ink-2);font-size:14.5px;max-width:70ch">A listing with no reviews does not fill like an established one. This model ramps the first year in quarters &mdash; 55%, 75%, 90%, then 100% of steady state &mdash; which averages to <b>80%</b>. It is the line most spreadsheets quietly leave out, and it is usually the difference between a plan that works and one that runs out of cash in March.</p>
+        <table>
+          <thead><tr><th></th><th class="n">Year one</th><th class="n">Steady state</th></tr></thead>
+          <tbody id="rampBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Where the number comes from</h2>
+      <div class="body"><ol class="work" id="workings"></ol></div>
+    </div>
+
+    <div class="panel">
+      <h2>What is left after everything</h2>
+      <div class="body">
+        <table><tbody id="pl"></tbody></table>
+        <p class="hint" id="plNote" style="margin-top:12px"></p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>What would move the number most</h2>
+      <div class="body">
+        <p style="margin:0 0 14px;color:var(--ink-2);font-size:14.5px;max-width:70ch">Each of these is the whole calculation run again with one thing changed, ranked by what it does to your annual net. Not a checklist &mdash; your actual figures.</p>
+        <ul class="levers" id="levers"></ul>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Rules and risks that apply here</h2>
+      <div class="body">
+        <div id="flags"></div>
+        <h3 style="font-size:16px;margin:22px 0 8px">Marked against this property</h3>
+        <ul class="risklist" id="risks"></ul>
+      </div>
+    </div>
+
+    <div class="panel honest">
+      <div class="body">
+        <h2>What this does not know</h2>
+        <p><b>It has no market data of its own.</b> Every figure above is built from the comparables you typed in. That is deliberate for a demo, and it is also the honest position: the expensive part of a tool like AirDNA is not the maths, it is licensing or collecting millions of listings and their booking calendars. Plug a licensed market feed into the same engine and these inputs fill themselves &mdash; nothing else changes.</p>
+        <p><b>Asking rates are not achieved rates.</b> What a listing displays is not what it got. Without booking-calendar data, occupancy here comes from the market profile and your setup, not from watching those specific properties fill.</p>
+        <p><b>The range is the answer, not the middle of it.</b> Any tool that gives you one confident number from a handful of comps is overselling. The width above comes from how much your comps disagree and how many you gave.</p>
+        <p><b>It is not tax, legal or lending advice.</b> The flags are there to send you to the right question, not to answer it.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer><div class="wrap">Built as a working demonstration. The scoring engine is a single plain file with no dependencies, no API keys and no network calls &mdash; which is why the same maths can be run and tested outside the browser.</div></footer>
+
+<script src="engine.js"></script>
+<script>
+(function(){
+  'use strict';
+  var $ = function(id){ return document.getElementById(id); };
+  var CUR = '£';
+
+  /* ---- build the selects and checkboxes from the engine's own data, so the
+          form can never drift out of step with what the engine accepts ---- */
+  Object.keys(STR.MARKETS).forEach(function(k){
+    var o = document.createElement('option'); o.value = k; o.textContent = STR.MARKETS[k].label; $('market').appendChild(o);
+  });
+  $('market').value = 'coastal';
+  Object.keys(STR.REGIONS).forEach(function(k){
+    var o = document.createElement('option'); o.value = k; o.textContent = STR.REGIONS[k].label; $('region').appendChild(o);
+  });
+  $('region').value = 'england';
+
+  STR.AMENITIES.forEach(function(a){
+    var l = document.createElement('label'); l.className = 'check';
+    l.innerHTML = '<input type="checkbox" data-am="' + a.key + '"> <span>' + a.label + '</span>';
+    $('amen').appendChild(l);
+  });
+  ['outdoor','parking','selfin','workspace'].forEach(function(k){
+    var el = document.querySelector('[data-am="' + k + '"]'); if (el) el.checked = true;
+  });
+
+  /* ---- comparables ---- */
+  var SEED = [[135,2],[118,2],[165,3],[95,1],[142,2]];
+  function addComp(rate, beds){
+    var d = document.createElement('div'); d.className = 'comp';
+    d.innerHTML = '<input type="number" class="cRate" min="0" placeholder="rate" value="' + (rate||'') + '">' +
+                  '<input type="number" class="cBeds" min="0.5" step="0.5" placeholder="beds" value="' + (beds||'') + '">' +
+                  '<button type="button" class="xbtn" title="remove">&times;</button>';
+    d.querySelector('.xbtn').addEventListener('click', function(){ d.remove(); run(); });
+    $('comps').appendChild(d);
+  }
+  SEED.forEach(function(c){ addComp(c[0], c[1]); });
+  $('addComp').addEventListener('click', function(){ addComp('',''); run(); });
+
+  /* ---- formatting ---- */
+  function m(v){
+    var neg = v < 0;
+    var s = CUR + Math.abs(Math.round(v)).toLocaleString('en-GB');
+    return neg ? '−' + s : s;
+  }
+  function m0(v){ return CUR + Math.round(v).toLocaleString('en-GB'); }
+  function pc(v){ return (Math.round(v * 10) / 10) + '%'; }
+
+  function gather(){
+    var am = {};
+    document.querySelectorAll('[data-am]').forEach(function(el){ am[el.dataset.am] = el.checked; });
+    var comps = [];
+    document.querySelectorAll('#comps .comp').forEach(function(d){
+      comps.push({ rate: d.querySelector('.cRate').value, beds: d.querySelector('.cBeds').value });
+    });
+    return {
+      currency: CUR,
+      bedrooms: $('bedrooms').value, market: $('market').value, region: $('region').value,
+      planningConsent: $('planningConsent').checked, wholeHome: true,
+      comps: comps, amenities: am,
+      minStay: $('minStay').value, avgStay: $('avgStay').value,
+      ownRate: $('ownRate').value,
+      proPhotos: $('proPhotos').checked, instantBook: $('instantBook').checked,
+      dynamicPricing: $('dynamicPricing').checked, managed: $('managed').checked,
+      cleaningFee: $('cleaningFee').value, cleaningCost: $('cleaningCost').value,
+      platformFeePct: $('platformFeePct').value, mgmtPct: $('mgmtPct').value,
+      monthlyRunning: $('monthlyRunning').value, monthlyFinance: $('monthlyFinance').value,
+      longLetMonthly: $('longLetMonthly').value
+    };
+  }
+
+  function run(){
+    var input = gather();
+    var r = STR.score(input);
+
+    $('nickTag').textContent = $('nickname').value || '';
+    $('marketNote').textContent = r.market.note;
+
+    /* dial */
+    var circ = 2 * Math.PI * 56;
+    var arc = circ * (r.score.total / 100);
+    $('dialArc').setAttribute('stroke-dasharray', arc.toFixed(1) + ' ' + (circ - arc).toFixed(1));
+    $('dialArc').setAttribute('stroke', r.score.total >= 70 ? 'var(--green)' : r.score.total >= 50 ? 'var(--amber)' : 'var(--rust)');
+    $('scoreNum').textContent = r.score.total;
+    $('verdictWord').textContent = r.score.verdict;
+    $('verdictWhy').textContent =
+      r.score.yieldBasis.charAt(0).toUpperCase() + r.score.yieldBasis.slice(1) +
+      '. Demand scores ' + Math.round(r.score.demand) + ' of 25, confidence in the comparables ' +
+      Math.round(r.score.confidence) + ' of 15, and ' + Math.round(r.score.riskDeduction) +
+      ' points are deducted for the risks listed below.';
+
+    /* range */
+    $('rLow').textContent = m0(r.range.low);
+    $('rHigh').textContent = m0(r.range.high);
+    $('barFill').style.left = '0%';
+    $('barFill').style.width = '100%';
+    $('barMid').style.left = '50%';
+    $('bandWhy').textContent = 'That is plus or minus ' + Math.round(r.range.band * 100) + '%, from ' +
+      r.comps.count + ' comparable' + (r.comps.count === 1 ? '' : 's') +
+      ' whose per-bedroom rates spread by ' + Math.round(r.comps.spread * 100) + '%. More comps, or comps that agree with each other, narrow it.';
+
+    /* headline metrics */
+    $('mAdr').textContent = m0(r.adr);
+    $('mAdrN').textContent = r.comps.count ? 'median of your comps, scaled to ' + input.bedrooms + ' bed' + (input.bedrooms == 1 ? '' : 's') : 'add some comparables';
+    $('mOcc').textContent = pc(r.occupancy.steady);
+    $('mOccN').textContent = 'year one ' + pc(r.occupancy.year1) + ' after the ramp';
+    $('mNights').textContent = Math.round(r.nights.steady);
+    $('mNightsN').textContent = r.nights.cap ? 'capped by law at ' + r.nights.cap : 'nights a year, steady state';
+
+    /* year one vs steady */
+    var rows = [
+      ['Nights let',        Math.round(r.year1.nights),      Math.round(r.steady.nights),      false],
+      ['Gross booking revenue', m(r.year1.gross),            m(r.steady.gross),                false],
+      ['Cleaning fees in',  m(r.year1.cleaningIncome),       m(r.steady.cleaningIncome),       false],
+      ['Total revenue',     m(r.year1.revenue),              m(r.steady.revenue),              false],
+      ['Net after everything', m(r.year1.net),               m(r.steady.net),                  true]
+    ];
+    $('rampBody').innerHTML = rows.map(function(x){
+      var cls = x[3] ? ' class="total"' : '';
+      var c1 = x[3] ? (r.year1.net < 0 ? ' neg' : ' pos') : '';
+      var c2 = x[3] ? (r.steady.net < 0 ? ' neg' : ' pos') : '';
+      return '<tr' + cls + '><td>' + x[0] + '</td><td class="n' + c1 + '">' + x[1] + '</td><td class="n' + c2 + '">' + x[2] + '</td></tr>';
+    }).join('');
+
+    /* workings */
+    $('workings').innerHTML = r.workings.map(function(w){
+      var v = /occupancy|ramp/i.test(w.label) ? pc(w.value) : (/cap/i.test(w.label) ? w.value + ' nights' : m0(w.value));
+      return '<li><div><span class="l">' + w.label + '</span><span class="d">' + w.detail + '</span></div><span class="v">' + v + '</span></li>';
+    }).join('');
+
+    /* P&L */
+    var s = r.steady;
+    var pl = [
+      ['Booking revenue',                    s.gross,          1],
+      ['Cleaning fees collected',            s.cleaningIncome, 1],
+      ['Platform fee (' + input.platformFeePct + '%)', -s.platformFees, -1],
+      ['Management fee (' + input.mgmtPct + '%)',      -s.mgmtFee,      -1],
+      ['Cleaning paid out (' + Math.round(s.turns) + ' changeovers)', -s.cleaningCost, -1],
+      ['Running costs',                      -s.running,       -1],
+      ['Mortgage or rent',                   -s.finance,       -1]
+    ];
+    var html = pl.filter(function(x){ return Math.abs(x[1]) > 0.5; }).map(function(x){
+      return '<tr><td>' + x[0] + '</td><td class="n ' + (x[1] < 0 ? 'neg' : '') + '">' + m(x[1]) + '</td></tr>';
+    }).join('');
+    html += '<tr class="total"><td>Net, steady state</td><td class="n ' + (s.net < 0 ? 'neg' : 'pos') + '">' + m(s.net) + '</td></tr>';
+    html += '<tr class="sm"><td>&hellip; per month</td><td class="n">' + m(s.net / 12) + '</td></tr>';
+    $('pl').innerHTML = html;
+
+    /* read the comparison from the engine rather than recomputing it here —
+       two copies of the same formula is how two numbers on one page drift */
+    $('plNote').textContent = r.alt
+      ? 'Let long term at ' + m0(parseFloat(input.longLetMonthly)) + ' a month, the same property earns about ' +
+        m0(r.alt.longBeforeFinance) + ' a year before the mortgage, against ' + m0(r.alt.shortBeforeFinance) +
+        ' as a short let — a difference of ' + m(r.alt.gap) + ', or ' + (Math.round(r.alt.ratio * 100) / 100) +
+        '×, in return for the changeovers, the licensing and the seasonality.'
+      : 'Add a long-let figure on the left and this compares the two properly.';
+
+    /* levers */
+    var maxAbs = r.levers.reduce(function(a, l){ return Math.max(a, Math.abs(l.delta)); }, 1);
+    $('levers').innerHTML = r.levers.map(function(l){
+      var w = Math.max(2, Math.abs(l.delta) / maxAbs * 100);
+      return '<li><span class="lname">' + l.label + '</span>' +
+             '<span class="ld ' + (l.delta >= 0 ? 'pos' : 'neg') + '">' + (l.delta >= 0 ? '+' : '') + m(l.delta) + '</span>' +
+             '<span class="lbar"><i class="' + (l.delta < 0 ? 'dn' : '') + '" style="width:' + w + '%"></i></span></li>';
+    }).join('') || '<li><span class="lname">Add comparables to see the levers.</span><span class="ld"></span></li>';
+
+    /* flags */
+    $('flags').innerHTML = r.flags.map(function(f){
+      return '<div class="flag ' + f.sev + '"><span class="tag">' + (f.sev === 'hard' ? 'Must check' : 'Be aware') +
+             '</span><h4>' + f.title + '</h4><p>' + f.body + '</p></div>';
+    }).join('');
+
+    $('risks').innerHTML = r.score.risks.length
+      ? r.score.risks.map(function(x){ return '<li>' + x.text + ' <span class="num" style="color:var(--ink-3)">(&minus;' + x.pts + ')</span></li>'; }).join('')
+      : '<li style="padding-left:0">Nothing flagged against this one on the inputs given.</li>';
+  }
+
+  document.addEventListener('input', run);
+  document.addEventListener('change', run);
+  run();
+})();
+</script>
+</body>
+</html>
